@@ -9,7 +9,7 @@
 #endif
 
 extern "C" {
-    EMULATOR_EXPORT emulator::component::System* CreateSystem();
+    emulator::component::System* CreateSystem();
 };
 
 #undef EMULATOR_EXPORT

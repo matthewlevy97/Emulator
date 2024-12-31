@@ -1,10 +1,9 @@
-#pragma once
-
 #include "bus.h"
 
 namespace emulator::component {
 
-Bus::Bus() : tickRate_(0.0f) {}
+Bus::Bus() {}
+
 Bus::~Bus() {
     for (auto component : components_) {
         delete component;
@@ -15,12 +14,11 @@ void Bus::AddComponent(IComponent* component) {
     components_.push_back(component);
 }
 
-void Bus::SetTickRate(float rate) {
-    tickRate_ = rate;
-}
-
-float Bus::GetTickRate() const {
-    return tickRate_;
+void Bus::ReceiveTick()
+{
+    for (auto component : components_) {
+        component->ReceiveTick();
+    }
 }
 
 void Bus::PowerOn() {

@@ -6,22 +6,20 @@
 
 namespace emulator::component {
 
-class Bus {
+class Bus : public IComponent {
 private:
-    float tickRate_;
     std::vector<IComponent*> components_;
 
 public:
     Bus();
-    ~Bus();
+    ~Bus() override;
 
     void AddComponent(IComponent* component);
 
-    void SetTickRate(float);
-    float GetTickRate() const;
+    void ReceiveTick() override;
 
-    void PowerOn();
-    void PowerOff();
+    void PowerOn() override;
+    void PowerOff() override;
 };
 
 }; // namespace emulator::component

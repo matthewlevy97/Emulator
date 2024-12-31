@@ -5,12 +5,12 @@ namespace emulator::component {
 class IComponent {
 public:
     IComponent() {}
-    virtual inline ~IComponent() {};
+    virtual inline ~IComponent() = default;
 
-    virtual void ReceiveTick();
+    virtual void ReceiveTick() = 0;
 
-    virtual void PowerOn() {};
-    virtual void PowerOff() {};
+    virtual void PowerOn() = 0;
+    virtual void PowerOff() = 0;
 };
 
 }; // namespace emulator::component
