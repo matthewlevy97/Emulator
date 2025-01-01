@@ -129,6 +129,40 @@ public:
         }
     }
 
+    template<Registers Reg>
+    inline void AddRegister(std::uint16_t value)
+    {
+        if constexpr (Reg == Registers::AF) {
+            registers_[0] += value;
+        } else if constexpr (Reg == Registers::A) {
+            registers_[0] += (registers_[0] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::BC) {
+            registers_[1] += value;
+        } else if constexpr (Reg == Registers::B) {
+            registers_[1] += (registers_[1] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::C) {
+            registers_[1] += (registers_[1] & 0xFF00) | (value & 0xFF);
+        } else if constexpr (Reg == Registers::DE) {
+            registers_[2] += value;
+        } else if constexpr (Reg == Registers::D) {
+            registers_[2] += (registers_[2] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::E) {
+            registers_[2] += (registers_[2] & 0xFF00) | (value & 0xFF);
+        } else if constexpr (Reg == Registers::HL) {
+            registers_[3] += value;
+        } else if constexpr (Reg == Registers::H) {
+            registers_[3] += (registers_[3] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::L) {
+            registers_[3] += (registers_[3] & 0xFF00) | (value & 0xFF);
+        } else if constexpr (Reg == Registers::SP) {
+            registers_[4] += value;
+        } else if constexpr (Reg == Registers::PC) {
+            registers_[5] += value;
+        } else {
+            std::unreachable();
+        }
+    }
+
     template<Flags Flag>
     inline bool GetFlag()
     {
@@ -170,6 +204,8 @@ public:
 
 public:
     CPU();
+    CPU(const CPU& other);
+
     ~CPU();
 
     void ReceiveTick() override;

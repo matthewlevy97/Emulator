@@ -5,6 +5,12 @@ namespace emulator::gameboy {
 CPU::CPU() : microcodeStackLength_(0), microcode_{}, registers_{}
 {}
 
+CPU::CPU(const CPU& other)
+    : microcodeStackLength_(other.microcodeStackLength_),
+    microcode_(other.microcode_),
+    registers_(other.registers_)
+{}
+
 CPU::~CPU() {}
 
 void CPU::ReceiveTick()
