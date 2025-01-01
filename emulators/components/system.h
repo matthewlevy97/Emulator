@@ -22,19 +22,28 @@ public:
 
     ~System() {}
 
-    std::string Name() const {
+    std::string Name() const
+    {
         return name_;
     }
 
-    void PowerOn() {
+    void PowerOn()
+    {
         bus_.PowerOn();
     }
 
-    void PowerOff() {
+    void PowerOff()
+    {
         bus_.PowerOff();
     }
 
-    void Run() {
+    Bus& GetBus()
+    {
+        return bus_;
+    }
+
+    void Run()
+    {
         while (true) {
             bus_.ReceiveTick();
         }

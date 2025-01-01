@@ -1,6 +1,8 @@
 #pragma once
 
 #include <components/component.h>
+
+#include <array>
 #include <type_traits>
 #include <utility>
 
@@ -8,7 +10,11 @@ namespace emulator::gameboy {
 
 class CPU : public emulator::component::IComponent {
 private:
-    std::uint16_t registers_[6];
+    using MicroCode = void (*)(CPU*);
+    std::array <MicroCode, 32> microcode_;
+    size_t microcodeStackIdx_;
+
+    std::array<std::uint16_t, 6> registers_;
 
 public:
 /*

@@ -13,7 +13,6 @@ function(CreateNewEmulatorTarget target_name)
     file(GLOB_RECURSE emulator_sources
         CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/emulators/${target_name}/tests/*.cpp
     )
-    
     add_executable(${target_name}_test ${emulator_sources})
     target_link_libraries(${target_name}_test
         PRIVATE

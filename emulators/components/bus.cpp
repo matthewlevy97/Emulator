@@ -11,7 +11,45 @@ Bus::~Bus() {
 }
 
 void Bus::AddComponent(IComponent* component) {
+    component->AttachToBus(this);
     components_.push_back(component);
+}
+
+void Bus::RemoveComponent(IComponent* component)
+{
+    for (auto& addressable : addressRanges_) {
+        if (addressable.component == component) {
+            addressRanges_.erase(
+                std::remove(addressRanges_.begin(), addressRanges_.end(), addressable),
+                addressRanges_.end()
+            );
+        }
+    }
+
+    components_.erase(
+        std::remove(components_.begin(), components_.end(), component),
+        components_.end()
+    );
+}
+
+bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::size_t, std::size_t> range) {
+    for (const auto& addressable : addressRanges_) {
+        // If new address is within an existing address range, return false
+        if (range.first >= addressable.start && range.first <= addressable.end) {
+            return false;
+        }
+        if (range.second >= addressable.start && range.second <= addressable.end) {
+            return false;
+        }
+    }
+
+    addressRanges_.push_back({
+        range.first,
+        range.second,
+        component
+    });
+
+    return true;
 }
 
 void Bus::ReceiveTick()
