@@ -8,7 +8,6 @@ using emulator::component::MultiMappedMemory;
 using emulator::component::MemoryType;
 using emulator::gameboy::CPU;
 
-// TODO: Add tests for all PUSH and POP instructions
 // TODO: Add test for all XOR instructions
 // TODO: Add test for all ADD instructions
 // TODO: Add test for all SUB instructions
@@ -184,3 +183,313 @@ DecodeIncDec4Cycle(DEC_A, 0x3D, CPU::Registers::A, -1)
 
 #undef DecodeIncDec4Cycle
 #pragma endregion DecodeIncDec4Cycle
+
+#pragma region DecodePushPop
+
+TEST_F(GameBoyCPUDecode, DecodePopBC)
+{
+    std::vector<std::uint8_t> opcodes = {0xC1};
+    LoadData(opcodes);
+
+    // Set value to pop from stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+    internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::SP>(), 0x1234);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Need 12 cycles to complete (3 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::BC>(0x1234);
+
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+TEST_F(GameBoyCPUDecode, DecodePopDE)
+{
+    std::vector<std::uint8_t> opcodes = {0xD1};
+    LoadData(opcodes);
+
+    // Set value to pop from stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+    internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::SP>(), 0x1234);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Need 12 cycles to complete (3 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::DE>(0x1234);
+
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+TEST_F(GameBoyCPUDecode, DecodePopHL)
+{
+    std::vector<std::uint8_t> opcodes = {0xE1};
+    LoadData(opcodes);
+
+    // Set value to pop from stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+    internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::SP>(), 0x1234);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Need 12 cycles to complete (3 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::HL>(0x1234);
+
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+TEST_F(GameBoyCPUDecode, DecodePopAF)
+{
+    std::vector<std::uint8_t> opcodes = {0xF1, 0xF1, 0xF1, 0xF1};
+    LoadData(opcodes);
+
+    // Set value to pop from stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+
+    std::vector<std::uint16_t> popValues = {
+        0xFF00,
+        0xFF00 | 0b10100000,
+        0xFF00 | 0b00010000,
+        0xFF00 | 0b11110000};
+    for (int i = 0; i < popValues.size(); i++) {
+        internalMem_->WriteUInt16(
+            cpu_->GetRegister<CPU::Registers::SP>() + sizeof(std::uint16_t) * i,
+            popValues[i]
+        );
+    }
+
+    CPU state;
+    SaveCPUState(state);
+
+
+    // Need 12 cycles to complete (3 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::AF>(0xFF00);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ASSERT_TRUE(ValidateCPUState(state));
+
+
+    // Need 12 cycles to complete (3 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::AF>(0xFF00 | 0b10100000);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    ASSERT_TRUE(ValidateCPUState(state));
+
+
+    // Need 12 cycles to complete (3 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::AF>(0xFF00 | 0b00010000);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(true);
+    ASSERT_TRUE(ValidateCPUState(state));
+
+
+    // Need 12 cycles to complete (3 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::AF>(0xFF00 | 0b11110000);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(true);
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+TEST_F(GameBoyCPUDecode, DecodePushBC)
+{
+    std::vector<std::uint8_t> opcodes = {0xC5};
+    LoadData(opcodes);
+
+    // Set compare value on stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+    internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::SP>(), 0x1234);
+
+    cpu_->SetRegister<CPU::Registers::BC>(0xCAFE);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Need 16 cycles to complete (4 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
+
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+TEST_F(GameBoyCPUDecode, DecodePushDE)
+{
+    std::vector<std::uint8_t> opcodes = {0xD5};
+    LoadData(opcodes);
+
+    // Set compare value on stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+    internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::SP>(), 0x1234);
+
+    cpu_->SetRegister<CPU::Registers::DE>(0xCAFE);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Need 16 cycles to complete (4 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
+
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+TEST_F(GameBoyCPUDecode, DecodePushHL)
+{
+    std::vector<std::uint8_t> opcodes = {0xE5};
+    LoadData(opcodes);
+
+    // Set compare value on stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+    internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::SP>(), 0x1234);
+
+    cpu_->SetRegister<CPU::Registers::HL>(0xCAFE);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Need 16 cycles to complete (4 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
+
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+TEST_F(GameBoyCPUDecode, DecodePushAF)
+{
+    std::vector<std::uint8_t> opcodes = {0xF5};
+    LoadData(opcodes);
+
+    // Set compare value on stack
+    cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);
+    internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::SP>(), 0x1234);
+
+    cpu_->SetRegister<CPU::Registers::AF>(0xCAFE);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Need 16 cycles to complete (4 machine cycles)
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    ASSERT_TRUE(ValidateCPUState(state));
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
+
+    ASSERT_TRUE(ValidateCPUState(state));
+}
+
+#pragma endregion DecodePushPop
