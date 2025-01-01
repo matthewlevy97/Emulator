@@ -7,6 +7,12 @@ function(CreateNewEmulatorTarget target_name)
         PRIVATE
             ${CMAKE_SOURCE_DIR}/emulators
     )
+    if(CMAKE_BUILD_TYPE MATCHES "Debug")
+        target_link_libraries(${target_name}
+            PRIVATE
+                gtest
+        )
+    endif()
 
     install(TARGETS ${target_name} DESTINATION bin/systems/)
 

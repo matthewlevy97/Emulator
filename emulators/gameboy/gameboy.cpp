@@ -6,18 +6,18 @@
 
 emulator::component::System* CreateSystem() {
     return new emulator::component::System("GameBoy", 1.0f, {
-        new emulator::gameboy::CPU(),
+        {"CPU", new emulator::gameboy::CPU()},
 
          // 8 KiB Internal RAM
-        new emulator::component::MultiMappedMemory<emulator::component::MemoryType::ReadWrite>(
+        {"Internal8KiBRAM", new emulator::component::MultiMappedMemory<emulator::component::MemoryType::ReadWrite>(
             {
                 {0xC000, 0xE000},
                 {0xE000, 0xFDFF}
             },
             0x2000
-        ),
+        )},
 
         // Internal RAM
-        new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0xFF80, 0x7F)
+        {"UpperInternalRAM", new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0xFF80, 0x7F)}
     });
 }

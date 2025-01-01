@@ -12,10 +12,12 @@ private:
     float tickRate_;
     Bus bus_;
 
+    std::unordered_map<std::string, IComponent*> components_;
+
 public:
-    System(std::string name, float tickRate, std::initializer_list<IComponent*> components)
-        : name_(name), tickRate_(tickRate) {
-        for (auto component : components) {
+    System(std::string name, float tickRate, std::unordered_map<std::string, IComponent*> components)
+        : name_(name), tickRate_(tickRate), components_(components) {
+        for (auto& [name, component] : components) {
             bus_.AddComponent(component);
         }
     }
@@ -40,6 +42,14 @@ public:
     Bus& GetBus()
     {
         return bus_;
+    }
+
+    IComponent* GetComponent(std::string name) const {
+        auto it = components_.find(name);
+        if (it == components_.end()) {
+            return nullptr;
+        }
+        return it->second;
     }
 
     void Run()

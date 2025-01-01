@@ -1,10 +1,10 @@
 #pragma once
 
-#include <components/component.h>
-
 #include <array>
 #include <type_traits>
 #include <utility>
+
+#include <components/component.h>
 
 namespace emulator::gameboy {
 
@@ -12,12 +12,15 @@ class CPU : public emulator::component::IComponent {
 private:
     using MicroCode = void (*)(CPU*);
     std::array <MicroCode, 32> microcode_;
-    size_t microcodeStackIdx_;
+    size_t microcodeStackLength_;
 
     std::array<std::uint16_t, 6> registers_;
 
+    void PushMicrocode(MicroCode code);
+    void DecodeOpcode(std::uint8_t opcode);
+
 public:
-/*
+    /*
     Registers:
         Name	Hi	Lo	Full Name
         AF	    A	-	Accumulator & Flags
