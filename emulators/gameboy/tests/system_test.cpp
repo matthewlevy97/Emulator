@@ -22,11 +22,8 @@ TEST(GameBoySystem, ReadWriteInternal8KiBRAM)
     auto bus = system->GetBus();
 
     // Write and read 8-bit values
-    bus.Write<std::uint8_t>(0xE000 - sizeof(std::uint8_t), 0xDE);
-    ASSERT_EQ(bus.Read<std::uint8_t>(0xE000 - sizeof(std::uint8_t)), 0xDE);
-
-    bus.Write<std::int8_t>(0xE000 - sizeof(std::int8_t), 0xCA);
-    ASSERT_EQ(bus.Read<std::int8_t>(0xE000 - sizeof(std::int8_t)), (std::int8_t)0xCA);
+    bus.Write<std::uint8_t>(0xE000 - sizeof(std::uint8_t) - 1, 0xCA);
+    ASSERT_EQ(bus.Read<std::uint8_t>(0xE000 - sizeof(std::uint8_t) - 1), (std::uint8_t)0xCA);
 
     bus.Write<std::uint8_t>(0xC000, 0xDE);
     ASSERT_EQ(bus.Read<std::uint8_t>(0xC000), 0xDE);
@@ -36,11 +33,8 @@ TEST(GameBoySystem, ReadWriteInternal8KiBRAM)
 
 
     // Write and read 16-bit values
-    bus.Write<std::uint16_t>(0xE000 - sizeof(std::uint16_t), 0xDEAD);
-    ASSERT_EQ(bus.Read<std::uint16_t>(0xE000 - sizeof(std::uint16_t)), 0xDEAD);
-
-    bus.Write<std::int16_t>(0xE000 - sizeof(std::int16_t), 0xCAFE);
-    ASSERT_EQ(bus.Read<std::int16_t>(0xE000 - sizeof(std::int16_t)), (std::int16_t)0xCAFE);
+    bus.Write<std::int16_t>(0xE000 - sizeof(std::int16_t) - 1, 0xCAFE);
+    ASSERT_EQ(bus.Read<std::int16_t>(0xE000 - sizeof(std::int16_t) - 1), (std::int16_t)0xCAFE);
 
     bus.Write<std::uint16_t>(0xC000, 0xDEAD);
     ASSERT_EQ(bus.Read<std::uint16_t>(0xC000), 0xDEAD);
@@ -50,11 +44,8 @@ TEST(GameBoySystem, ReadWriteInternal8KiBRAM)
 
 
     // Write and read 32-bit values
-    bus.Write<std::uint32_t>(0xE000 - sizeof(std::uint32_t), 0xDEADBEEF);
-    ASSERT_EQ(bus.Read<std::uint32_t>(0xE000 - sizeof(std::uint32_t)), 0xDEADBEEF);
-
-    bus.Write<std::int32_t>(0xE000 - sizeof(std::int32_t), 0xCAFEBABE);
-    ASSERT_EQ(bus.Read<std::int32_t>(0xE000 - sizeof(std::int32_t)), (std::int32_t)0xCAFEBABE);
+    bus.Write<std::int32_t>(0xE000 - sizeof(std::int32_t) - 1, 0xCAFEBABE);
+    ASSERT_EQ(bus.Read<std::int32_t>(0xE000 - sizeof(std::int32_t) - 1), (std::int32_t)0xCAFEBABE);
 
     bus.Write<std::uint32_t>(0xC000, 0xDEADBEEF);
     ASSERT_EQ(bus.Read<std::uint32_t>(0xC000), 0xDEADBEEF);
@@ -63,8 +54,25 @@ TEST(GameBoySystem, ReadWriteInternal8KiBRAM)
     ASSERT_EQ(bus.Read<std::int32_t>(0xC000), (std::int32_t)0xCAFEBABE);
 }
 
+// Test reading and writing to echo internal ram
+TEST(GameBoySystem, ReadWriteInternalEcho8KiBRAM)
+{
+    auto system = CreateSystem();
+    auto bus = system->GetBus();
+
+    constexpr std::size_t offset = 32;
+
+    bus.Write<std::uint8_t>(0xC000 + offset, 0xDE);
+    ASSERT_EQ(bus.Read<std::uint8_t>(0xC000 + offset), 0xDE);
+    ASSERT_EQ(bus.Read<std::uint8_t>(0xE000 + offset), 0xDE);
+
+    bus.Write<std::uint8_t>(0xE000 + offset, 0xCA);
+    ASSERT_EQ(bus.Read<std::uint8_t>(0xC000 + offset), 0xCA);
+    ASSERT_EQ(bus.Read<std::uint8_t>(0xE000 + offset), 0xCA);
+}
+
 // Test reading from upper internal ram
-TEST(GameBoySystem, ReadUpperInternalRAM)
+TEST(GameBoySystem, ReadWriteUpperInternalRAM)
 {
     auto system = CreateSystem();
     auto bus = system->GetBus();

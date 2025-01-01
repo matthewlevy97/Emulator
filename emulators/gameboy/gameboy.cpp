@@ -1,5 +1,6 @@
 #include <emulator.h>
 #include <components/memory.h>
+#include <components/multimappedmemory.h>
 
 #include "cpu.h"
 
@@ -8,7 +9,13 @@ emulator::component::System* CreateSystem() {
         new emulator::gameboy::CPU(),
 
          // 8 KiB Internal RAM
-        new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0xC000, 0x2000),
+        new emulator::component::MultiMappedMemory<emulator::component::MemoryType::ReadWrite>(
+            {
+                {0xC000, 0xE000},
+                {0xE000, 0xFDFF}
+            },
+            0x2000
+        ),
 
         // Internal RAM
         new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0xFF80, 0x7F)

@@ -56,7 +56,7 @@ public:
 
     void AttachToBus(Bus* bus) override
     {
-        if (!bus->RegisterComponentAddressRange(this, { baseAddress_, baseAddress_ + memory_.size() })) {
+        if (!bus->RegisterComponentAddressRange(this, { baseAddress_, baseAddress_ + memory_.size() - 1 })) {
             throw AddressInUse();
         }
         bus_ = bus;

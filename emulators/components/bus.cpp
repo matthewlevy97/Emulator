@@ -35,7 +35,7 @@ void Bus::RemoveComponent(IComponent* component)
 bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::size_t, std::size_t> range) {
     for (const auto& addressable : addressRanges_) {
         // If new address is within an existing address range, return false
-        if (range.first >= addressable.start && range.first <= addressable.end) {
+        if (range.first >= addressable.start && range.first < addressable.end) {
             return false;
         }
         if (range.second >= addressable.start && range.second <= addressable.end) {

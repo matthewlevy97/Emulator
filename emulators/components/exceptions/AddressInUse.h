@@ -7,7 +7,7 @@ namespace emulator::component {
 class AddressInUse : public std::exception {
 public:
     const char* what() const noexcept override {
-        return "My exception happened";
+        return "Address already in use.";
     }
 };
 

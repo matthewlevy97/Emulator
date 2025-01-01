@@ -12,7 +12,10 @@ TEST(ComponentMultiMappedMemory, ValidAddress)
 
 TEST(ComponentMultiMappedMemory, InvalidAddress)
 {
-    auto ram = emulator::component::MultiMappedMemory<emulator::component::MemoryType::ReadWrite>({0x100}, 1024);
+    auto ram = emulator::component::MultiMappedMemory<emulator::component::MemoryType::ReadWrite>(
+        {{0x100, 0x100 + 1024}},
+        1024
+    );
 
     // Under base address
     ASSERT_THROW(ram.ReadUInt8(0), std::out_of_range);
@@ -33,10 +36,10 @@ TEST(ComponentMultiMappedMemory, ReadWriteToMultiMapped)
 
     auto ram = emulator::component::MultiMappedMemory<emulator::component::MemoryType::ReadWrite>(
         {
-            0x00000,
-            0x10000
+            {0x00000, 0x1000},
+            {0x10000, 0x11000}
         },
-        1024
+        0x1000
     );
 
     ram.WriteUInt8(address, 0x12);
