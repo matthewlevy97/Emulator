@@ -8,7 +8,6 @@ using emulator::component::MultiMappedMemory;
 using emulator::component::MemoryType;
 using emulator::gameboy::CPU;
 
-// TODO: Add test for all XOR instructions
 // TODO: Add test for all ADD instructions
 // TODO: Add test for all SUB instructions
 // TODO: Add test for all ADC instructions
@@ -62,16 +61,19 @@ protected:
         ctx = *cpu_;
     }
 
-    bool ValidateCPUState(CPU& ctx)
+    void ValidateCPUState(CPU& ctx)
     {
-        return (
-            ctx.GetRegister<CPU::Registers::AF>() == cpu_->GetRegister<CPU::Registers::AF>() &&
-            ctx.GetRegister<CPU::Registers::BC>() == cpu_->GetRegister<CPU::Registers::BC>() &&
-            ctx.GetRegister<CPU::Registers::DE>() == cpu_->GetRegister<CPU::Registers::DE>() &&
-            ctx.GetRegister<CPU::Registers::HL>() == cpu_->GetRegister<CPU::Registers::HL>() &&
-            ctx.GetRegister<CPU::Registers::PC>() == cpu_->GetRegister<CPU::Registers::PC>() &&
-            ctx.GetRegister<CPU::Registers::SP>() == cpu_->GetRegister<CPU::Registers::SP>()
-        );
+        ASSERT_EQ(ctx.GetRegister<CPU::Registers::A>(), cpu_->GetRegister<CPU::Registers::A>());
+        ASSERT_EQ(ctx.GetRegister<CPU::Registers::BC>(), cpu_->GetRegister<CPU::Registers::BC>());
+        ASSERT_EQ(ctx.GetRegister<CPU::Registers::DE>(), cpu_->GetRegister<CPU::Registers::DE>());
+        ASSERT_EQ(ctx.GetRegister<CPU::Registers::HL>(), cpu_->GetRegister<CPU::Registers::HL>());
+        ASSERT_EQ(ctx.GetRegister<CPU::Registers::PC>(), cpu_->GetRegister<CPU::Registers::PC>());
+        ASSERT_EQ(ctx.GetRegister<CPU::Registers::SP>(), cpu_->GetRegister<CPU::Registers::SP>());
+
+        ASSERT_EQ(ctx.GetFlag<CPU::Flags::Z>(), cpu_->GetFlag<CPU::Flags::Z>());
+        ASSERT_EQ(ctx.GetFlag<CPU::Flags::N>(), cpu_->GetFlag<CPU::Flags::N>());
+        ASSERT_EQ(ctx.GetFlag<CPU::Flags::H>(), cpu_->GetFlag<CPU::Flags::H>());
+        ASSERT_EQ(ctx.GetFlag<CPU::Flags::C>(), cpu_->GetFlag<CPU::Flags::C>());
     }
 };
 
@@ -88,7 +90,7 @@ TEST_F(GameBoyCPUDecode, DecodeNOOP)
         state.AddRegister<CPU::Registers::PC>(1);
     }
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 #pragma region DecodeIncDec16Cycle
@@ -102,12 +104,12 @@ TEST_F(GameBoyCPUDecode, DecodeNOOP)
         SaveCPUState(state);                                \
                                                             \
         cpu_->ReceiveTick();                                \
-        ASSERT_TRUE(ValidateCPUState(state));               \
+        ValidateCPUState(state);                            \
                                                             \
         cpu_->ReceiveTick();                                \
         state.AddRegister<CPU::Registers::PC>(1);           \
         state.SetRegister<targetReg>(val);                  \
-        ASSERT_TRUE(ValidateCPUState(state));               \
+        ValidateCPUState(state);                            \
     }
 
 DecodeIncDec8Cycle(INC_BC, 0x03, CPU::Registers::BC, 1)
@@ -123,6 +125,58 @@ DecodeIncDec8Cycle(DEC_SP, 0x3B, CPU::Registers::SP, -1)
 #pragma endregion DecodeIncDec16Cycle
 
 #pragma region DecodeIncDec4Cycle
+#define DecodeIncDec4CycleZ(name, opcode, targetReg, val)   \
+    TEST_F(GameBoyCPUDecode, Decode##name##_ZFlag)          \
+    {                                                       \
+        std::vector<std::uint8_t> opcodes = {opcode};       \
+        LoadData(opcodes);                                  \
+                                                            \
+        CPU state;                                          \
+        SaveCPUState(state);                                \
+                                                            \
+        if constexpr (val > 0)                              \
+            cpu_->SetRegister<targetReg>(0xFF);             \
+        else                                                \
+            cpu_->SetRegister<targetReg>(0x01);             \
+                                                            \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        state.SetRegister<targetReg>(0);                    \
+        state.SetFlag<CPU::Flags::Z>(true);                 \
+        state.SetFlag<CPU::Flags::N>(val < 0);              \
+        if constexpr (val > 0)                              \
+            state.SetFlag<CPU::Flags::H>(true);             \
+        else                                                \
+            state.SetFlag<CPU::Flags::H>(false);            \
+        ValidateCPUState(state);                            \
+    }
+
+#define DecodeIncDec4CycleH(name, opcode, targetReg, val)   \
+    TEST_F(GameBoyCPUDecode, Decode##name##_HFlag)          \
+    {                                                       \
+        std::vector<std::uint8_t> opcodes = {opcode};       \
+        LoadData(opcodes);                                  \
+                                                            \
+        CPU state;                                          \
+        SaveCPUState(state);                                \
+                                                            \
+        if constexpr (val > 0)                              \
+            cpu_->SetRegister<targetReg>(0x0F);             \
+        else                                                \
+            cpu_->SetRegister<targetReg>(0x10);             \
+                                                            \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        if constexpr (val > 0)                              \
+            state.SetRegister<targetReg>(0x10);             \
+        else                                                \
+            state.SetRegister<targetReg>(0x0F);             \
+        state.SetFlag<CPU::Flags::Z>(false);                \
+        state.SetFlag<CPU::Flags::N>(val < 0);              \
+        state.SetFlag<CPU::Flags::H>(true);                 \
+        ValidateCPUState(state);                            \
+    }
+
 #define DecodeIncDec4Cycle(name, opcode, targetReg, val)    \
     TEST_F(GameBoyCPUDecode, Decode##name)                  \
     {                                                       \
@@ -132,39 +186,17 @@ DecodeIncDec8Cycle(DEC_SP, 0x3B, CPU::Registers::SP, -1)
         CPU state;                                          \
         SaveCPUState(state);                                \
                                                             \
+        cpu_->SetRegister<targetReg>(0x3);                  \
         cpu_->ReceiveTick();                                \
         state.AddRegister<CPU::Registers::PC>(1);           \
-        state.SetRegister<targetReg>(val);                  \
-        state.SetFlag<CPU::Flags::Z>(false);                \
+        state.SetRegister<targetReg>(0x3 + val);            \
+        state.SetFlag<CPU::Flags::Z>(false); /* val != 0 */ \
         state.SetFlag<CPU::Flags::N>(val < 0);              \
         state.SetFlag<CPU::Flags::H>(false);                \
-        ASSERT_TRUE(ValidateCPUState(state));               \
-                                                            \
-        /* Reset state to test setting Z flag */            \
-        cpu_->SetRegister<targetReg>(-val);                 \
-        cpu_->AddRegister<CPU::Registers::PC>(-1);          \
-                                                            \
-        cpu_->ReceiveTick();                                \
-        state.SetRegister<targetReg>(0);                    \
-        state.SetFlag<CPU::Flags::Z>(true);                 \
-        state.SetFlag<CPU::Flags::N>(val < 0);              \
-        state.SetFlag<CPU::Flags::H>(false);                \
-        ASSERT_TRUE(ValidateCPUState(state));               \
-                                                            \
-        /* Reset state to test setting H flag */            \
-        if constexpr (val > 0)                              \
-            cpu_->SetRegister<targetReg>(0xF);              \
-        else                                                \
-            cpu_->SetRegister<targetReg>(0x0);              \
-        cpu_->AddRegister<CPU::Registers::PC>(-1);          \
-                                                            \
-        cpu_->ReceiveTick();                                \
-        state.SetRegister<targetReg>(0);                    \
-        state.SetFlag<CPU::Flags::Z>(false);                \
-        state.SetFlag<CPU::Flags::N>(val < 0);              \
-        state.SetFlag<CPU::Flags::H>(false);                \
-        ASSERT_TRUE(ValidateCPUState(state));               \
-    }
+        ValidateCPUState(state);                            \
+    }                                                       \
+    DecodeIncDec4CycleZ(name, opcode, targetReg, val)       \
+    DecodeIncDec4CycleH(name, opcode, targetReg, val)
 
 DecodeIncDec4Cycle(INC_B, 0x04, CPU::Registers::B, 1)
 DecodeIncDec4Cycle(DEC_B, 0x05, CPU::Registers::B, -1)
@@ -181,6 +213,8 @@ DecodeIncDec4Cycle(DEC_L, 0x2D, CPU::Registers::L, -1)
 DecodeIncDec4Cycle(INC_A, 0x3C, CPU::Registers::A, 1)
 DecodeIncDec4Cycle(DEC_A, 0x3D, CPU::Registers::A, -1)
 
+#undef DecodeIncDec4CycleZ
+#undef DecodeIncDec4CycleH
 #undef DecodeIncDec4Cycle
 #pragma endregion DecodeIncDec4Cycle
 
@@ -200,16 +234,16 @@ TEST_F(GameBoyCPUDecode, DecodePopBC)
 
     // Need 12 cycles to complete (3 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
     state.SetRegister<CPU::Registers::BC>(0x1234);
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodePopDE)
@@ -226,16 +260,16 @@ TEST_F(GameBoyCPUDecode, DecodePopDE)
 
     // Need 12 cycles to complete (3 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
     state.SetRegister<CPU::Registers::DE>(0x1234);
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodePopHL)
@@ -252,16 +286,16 @@ TEST_F(GameBoyCPUDecode, DecodePopHL)
 
     // Need 12 cycles to complete (3 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
     state.SetRegister<CPU::Registers::HL>(0x1234);
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodePopAF)
@@ -290,10 +324,10 @@ TEST_F(GameBoyCPUDecode, DecodePopAF)
 
     // Need 12 cycles to complete (3 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -302,15 +336,15 @@ TEST_F(GameBoyCPUDecode, DecodePopAF)
     state.SetFlag<CPU::Flags::N>(false);
     state.SetFlag<CPU::Flags::H>(false);
     state.SetFlag<CPU::Flags::C>(false);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
 
     // Need 12 cycles to complete (3 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -319,15 +353,15 @@ TEST_F(GameBoyCPUDecode, DecodePopAF)
     state.SetFlag<CPU::Flags::N>(false);
     state.SetFlag<CPU::Flags::H>(true);
     state.SetFlag<CPU::Flags::C>(false);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
 
     // Need 12 cycles to complete (3 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -336,15 +370,15 @@ TEST_F(GameBoyCPUDecode, DecodePopAF)
     state.SetFlag<CPU::Flags::N>(false);
     state.SetFlag<CPU::Flags::H>(false);
     state.SetFlag<CPU::Flags::C>(true);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
 
     // Need 12 cycles to complete (3 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -353,7 +387,7 @@ TEST_F(GameBoyCPUDecode, DecodePopAF)
     state.SetFlag<CPU::Flags::N>(true);
     state.SetFlag<CPU::Flags::H>(true);
     state.SetFlag<CPU::Flags::C>(true);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodePushBC)
@@ -372,22 +406,22 @@ TEST_F(GameBoyCPUDecode, DecodePushBC)
 
     // Need 16 cycles to complete (4 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodePushDE)
@@ -406,22 +440,22 @@ TEST_F(GameBoyCPUDecode, DecodePushDE)
 
     // Need 16 cycles to complete (4 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodePushHL)
@@ -440,22 +474,22 @@ TEST_F(GameBoyCPUDecode, DecodePushHL)
 
     // Need 16 cycles to complete (4 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodePushAF)
@@ -474,22 +508,22 @@ TEST_F(GameBoyCPUDecode, DecodePushAF)
 
     // Need 16 cycles to complete (4 machine cycles)
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0x1234);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
     ASSERT_EQ(internalMem_->ReadUInt16(cpu_->GetRegister<CPU::Registers::SP>()), 0xCAFE);
 
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 #pragma endregion DecodePushPop
@@ -517,7 +551,7 @@ TEST_F(GameBoyCPUDecode, DecodePushAF)
         state.SetFlag<CPU::Flags::N>(false);                    \
         state.SetFlag<CPU::Flags::H>(false);                    \
         state.SetFlag<CPU::Flags::C>(false);                    \
-        ASSERT_TRUE(ValidateCPUState(state));                   \
+        ValidateCPUState(state);                                \
                                                                 \
         /* 1 XOR 1 = 0 */                                       \
         cpu_->SetRegister<CPU::Registers::A>(1);                \
@@ -531,7 +565,7 @@ TEST_F(GameBoyCPUDecode, DecodePushAF)
         state.SetFlag<CPU::Flags::N>(false);                    \
         state.SetFlag<CPU::Flags::H>(false);                    \
         state.SetFlag<CPU::Flags::C>(false);                    \
-        ASSERT_TRUE(ValidateCPUState(state));                   \
+        ValidateCPUState(state);                                \
     }
 
 DecodeXOR(XOR_B, CPU::Registers::B, 0xA8)
@@ -557,7 +591,7 @@ TEST_F(GameBoyCPUDecode, DecodeXOR_N)
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -566,14 +600,14 @@ TEST_F(GameBoyCPUDecode, DecodeXOR_N)
     state.SetFlag<CPU::Flags::N>(false);
     state.SetFlag<CPU::Flags::H>(false);
     state.SetFlag<CPU::Flags::C>(false);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     /* 1 XOR 1 = 0 */
     cpu_->SetRegister<CPU::Registers::A>(1);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -582,7 +616,7 @@ TEST_F(GameBoyCPUDecode, DecodeXOR_N)
     state.SetFlag<CPU::Flags::N>(false);
     state.SetFlag<CPU::Flags::H>(false);
     state.SetFlag<CPU::Flags::C>(false);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 TEST_F(GameBoyCPUDecode, DecodeXOR_HLAddr)
@@ -600,7 +634,7 @@ TEST_F(GameBoyCPUDecode, DecodeXOR_HLAddr)
     internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::HL>(), 0b10);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -609,14 +643,14 @@ TEST_F(GameBoyCPUDecode, DecodeXOR_HLAddr)
     state.SetFlag<CPU::Flags::N>(false);
     state.SetFlag<CPU::Flags::H>(false);
     state.SetFlag<CPU::Flags::C>(false);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     /* 1 XOR 1 = 0 */
     cpu_->SetRegister<CPU::Registers::A>(1);
     internalMem_->WriteUInt16(cpu_->GetRegister<CPU::Registers::HL>(), 1);
 
     cpu_->ReceiveTick();
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 
     cpu_->ReceiveTick();
     state.AddRegister<CPU::Registers::PC>(1);
@@ -625,7 +659,7 @@ TEST_F(GameBoyCPUDecode, DecodeXOR_HLAddr)
     state.SetFlag<CPU::Flags::N>(false);
     state.SetFlag<CPU::Flags::H>(false);
     state.SetFlag<CPU::Flags::C>(false);
-    ASSERT_TRUE(ValidateCPUState(state));
+    ValidateCPUState(state);
 }
 
 #pragma endregion DecodeXOR
