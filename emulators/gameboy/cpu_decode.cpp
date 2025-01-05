@@ -21,13 +21,13 @@ static inline bool IsHC(std::uint16_t a, std::uint16_t b)
 // a - b
 static inline bool IsHCSub(std::uint8_t a, std::uint8_t b)
 {
-    return ((a & 0xF) < (b & 0xF));
+    return (((a & 0xF) - (b & 0xF)) & 0x10) == 0x10;
 }
 
 // a - b
 static inline bool IsHCSub(std::uint16_t a, std::uint16_t b)
 {
-    return ((a & 0xFFF) < (b & 0xFFF));
+    return (((a & 0xFFF) - (b & 0xFFF)) & 0x1000) == 0x1000;
 }
 
 void CPU::DecodeOpcode(std::uint8_t opcode)
