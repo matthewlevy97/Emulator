@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <functional>
 #include <type_traits>
 #include <utility>
 
@@ -10,8 +11,8 @@ namespace emulator::gameboy {
 
 class CPU : public emulator::component::IComponent {
 private:
-    using MicroCode = void (*)(CPU*);
-    std::array <MicroCode, 32> microcode_;
+    using MicroCode = std::function<void(CPU*)>;
+    std::array<MicroCode, 32> microcode_;
     size_t microcodeStackLength_;
 
     std::array<std::uint16_t, 6> registers_;
@@ -33,6 +34,7 @@ public:
     enum class Registers {
         AF,
         A,
+        F,
         BC,
         B,
         C,
@@ -68,6 +70,8 @@ public:
             return registers_[0];
         } else if constexpr (Reg == Registers::A) {
             return registers_[0] >> 8;
+        } else if constexpr (Reg == Registers::F) {
+            return registers_[0] & 0xFF;
         } else if constexpr (Reg == Registers::BC) {
             return registers_[1];
         } else if constexpr (Reg == Registers::B) {
@@ -102,6 +106,8 @@ public:
             registers_[0] = value;
         } else if constexpr (Reg == Registers::A) {
             registers_[0] = (registers_[0] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::A) {
+            registers_[0] = (registers_[0] & 0xFF00) | (value & 0xFF);
         } else if constexpr (Reg == Registers::BC) {
             registers_[1] = value;
         } else if constexpr (Reg == Registers::B) {
@@ -158,6 +164,40 @@ public:
             registers_[4] += value;
         } else if constexpr (Reg == Registers::PC) {
             registers_[5] += value;
+        } else {
+            std::unreachable();
+        }
+    }
+
+    template<Registers Reg>
+    inline void SubRegister(std::uint16_t value)
+    {
+        if constexpr (Reg == Registers::AF) {
+            registers_[0] -= value;
+        } else if constexpr (Reg == Registers::A) {
+            registers_[0] -= (registers_[0] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::BC) {
+            registers_[1] -= value;
+        } else if constexpr (Reg == Registers::B) {
+            registers_[1] -= (registers_[1] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::C) {
+            registers_[1] -= (registers_[1] & 0xFF00) | (value & 0xFF);
+        } else if constexpr (Reg == Registers::DE) {
+            registers_[2] -= value;
+        } else if constexpr (Reg == Registers::D) {
+            registers_[2] -= (registers_[2] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::E) {
+            registers_[2] -= (registers_[2] & 0xFF00) | (value & 0xFF);
+        } else if constexpr (Reg == Registers::HL) {
+            registers_[3] -= value;
+        } else if constexpr (Reg == Registers::H) {
+            registers_[3] -= (registers_[3] & 0x00FF) | ((value & 0xFF) << 8);
+        } else if constexpr (Reg == Registers::L) {
+            registers_[3] -= (registers_[3] & 0xFF00) | (value & 0xFF);
+        } else if constexpr (Reg == Registers::SP) {
+            registers_[4] -= value;
+        } else if constexpr (Reg == Registers::PC) {
+            registers_[5] -= value;
         } else {
             std::unreachable();
         }

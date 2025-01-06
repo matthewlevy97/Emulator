@@ -5,8 +5,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 project(Emulator)
 
-# Add GoogleTest
+option(test "Build all tests." ON)
+
 include(FetchContent)
+
+# Add spdlog
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG        v1.x
+)
+FetchContent_MakeAvailable(spdlog)
+
+# Add GoogleTest
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
@@ -18,5 +29,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 include(GoogleTest)
+
+set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL TRUE FORCE)
 
 add_subdirectory(emulators)
