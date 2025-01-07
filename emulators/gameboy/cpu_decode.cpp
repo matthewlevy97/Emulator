@@ -39,6 +39,16 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode(CycleNoOp);
         break;
     
+    // LD (BC), A
+    case 0x02:
+        PushMicrocode(CycleNoOp);
+        PushMicrocode([](CPU* cpu) {
+            auto bus = cpu->bus_;
+            bus->Write<std::uint8_t>(cpu->GetRegister<Registers::BC>(),
+                                    cpu->GetRegister<Registers::A>());
+        });
+        break;
+
     // INC BC
     case 0x03:
         // 8 Cycles
@@ -135,6 +145,16 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::Z>(value == 0);
             cpu->SetFlag<Flags::N>(true);
             cpu->SetFlag<Flags::H>(IsHCSub(reg, 1));
+        });
+        break;
+    
+    // LD (DE), A
+    case 0x12:
+        PushMicrocode(CycleNoOp);
+        PushMicrocode([](CPU* cpu) {
+            auto bus = cpu->bus_;
+            bus->Write<std::uint8_t>(cpu->GetRegister<Registers::DE>(),
+                                    cpu->GetRegister<Registers::A>());
         });
         break;
 
@@ -237,6 +257,17 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    // LD (HL+), A
+    case 0x22:
+        PushMicrocode(CycleNoOp);
+        PushMicrocode([](CPU* cpu) {
+            auto bus = cpu->bus_;
+            bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
+                                    cpu->GetRegister<Registers::A>());
+            cpu->AddRegister<Registers::HL>(1);
+        });
+        break;
+    
     // INC HL
     case 0x23:
         // 8 Cycles
@@ -333,6 +364,17 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::Z>(value == 0);
             cpu->SetFlag<Flags::N>(true);
             cpu->SetFlag<Flags::H>(IsHCSub(reg, 1));
+        });
+        break;
+    
+    // LD (HL-), A
+    case 0x32:
+        PushMicrocode(CycleNoOp);
+        PushMicrocode([](CPU* cpu) {
+            auto bus = cpu->bus_;
+            bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
+                                    cpu->GetRegister<Registers::A>());
+            cpu->SubRegister<Registers::HL>(1);
         });
         break;
     

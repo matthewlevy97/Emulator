@@ -8,6 +8,8 @@ using emulator::component::MultiMappedMemory;
 using emulator::component::MemoryType;
 using emulator::gameboy::CPU;
 
+// TODO: Finish LD commands
+
 class GameBoyCPUDecode : public ::testing::Test {
 protected:
     emulator::component::System* system_;
@@ -951,5 +953,122 @@ DecodeLoadHLAddr(0x75, L, CPU::Registers::L)
 DecodeLoadHLAddr(0x77, A, CPU::Registers::A)
 
 #undef DecodeLoadHLAddr
+
+#define DecodeLoadAddr(opcode, name, targetReg)                                     \
+    TEST_F(GameBoyCPUDecode, DecodeLD_##name##Address_A)                            \
+    {                                                                               \
+        std::vector<std::uint8_t> opcodes = {opcode};                               \
+        LoadData(opcodes);                                                          \
+                                                                                    \
+        auto mem = cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2;    \
+        cpu_->SetRegister<targetReg>(mem);                                          \
+        internalMem_->WriteUInt8(cpu_->GetRegister<targetReg>(), 0xDE);             \
+                                                                                    \
+        cpu_->SetRegister<CPU::Registers::A>(0xCA);                                 \
+                                                                                    \
+        CPU state;                                                                  \
+        SaveCPUState(state);                                                        \
+                                                                                    \
+        cpu_->ReceiveTick();                                                        \
+        ValidateCPUState(state);                                                    \
+                                                                                    \
+        cpu_->ReceiveTick();                                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                                   \
+        state.SetFlag<CPU::Flags::Z>(false);                                        \
+        state.SetFlag<CPU::Flags::N>(false);                                        \
+        state.SetFlag<CPU::Flags::H>(false);                                        \
+        state.SetFlag<CPU::Flags::C>(false);                                        \
+        ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<targetReg>()), 0xCA);   \
+        ValidateCPUState(state);                                                    \
+    }
+
+DecodeLoadAddr(0x02, BC, CPU::Registers::BC)
+DecodeLoadAddr(0x12, DE, CPU::Registers::DE)
+
+TEST_F(GameBoyCPUDecode, DecodeLD_ToHLAddressInc)
+{
+    std::vector<std::uint8_t> opcodes = {0x22};
+    LoadData(opcodes);
+
+    auto mem = cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2; 
+    cpu_->SetRegister<CPU::Registers::HL>(mem);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0xDE);
+
+    cpu_->SetRegister<CPU::Registers::A>(0xCA);
+
+    CPU state; 
+    SaveCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::HL>(1);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>() - 1), 0xCA);
+    ValidateCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeLD_ToHLAddressDec)
+{
+    std::vector<std::uint8_t> opcodes = {0x32};
+    LoadData(opcodes);
+
+    auto mem = cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2; 
+    cpu_->SetRegister<CPU::Registers::HL>(mem);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0xDE);
+
+    cpu_->SetRegister<CPU::Registers::A>(0xCA);
+
+    CPU state; 
+    SaveCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.SubRegister<CPU::Registers::HL>(1);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>() + 1), 0xCA);
+    ValidateCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeLD_FromHLAddressDec)
+{
+    std::vector<std::uint8_t> opcodes = {0x3A};
+    LoadData(opcodes);
+
+    auto mem = cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2; 
+    cpu_->SetRegister<CPU::Registers::HL>(mem);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0xDE);
+
+    cpu_->SetRegister<CPU::Registers::A>(0xCA);
+
+    CPU state; 
+    SaveCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.SubRegister<CPU::Registers::HL>(1);
+    ValidateCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0xDE);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+#undef DecodeLoadAddr
 
 #pragma endregion DecodeLD

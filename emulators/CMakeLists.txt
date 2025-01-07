@@ -17,7 +17,7 @@ function(CreateNewEmulatorTarget target_name)
 
     install(TARGETS ${target_name} DESTINATION bin/systems/)
 
-    if (test)
+    if(BUILD_TESTS)
         file(GLOB_RECURSE emulator_sources
             CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/emulators/${target_name}/tests/*.cpp
         )
@@ -53,4 +53,7 @@ add_subdirectory(components)
 add_subdirectory(gameboy)
 
 # Main emulator
+if(COMPILE_DEBUGGER)
+    add_subdirectory(debugger)
+endif()
 add_subdirectory(core)

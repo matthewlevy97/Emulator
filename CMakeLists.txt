@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 project(Emulator)
 
-option(test "Build all tests." ON)
+option(BUILD_TESTS "Build all tests" ON)
+option(COMPILE_DEBUGGER "Compile with GDBServer Bindings" ON)
 
 include(FetchContent)
 
@@ -18,17 +19,19 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(spdlog)
 
 # Add GoogleTest
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG        main
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+if(BUILD_TESTS)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        main
+  )
+  # For Windows: Prevent overriding the parent project's compiler/linker settings
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
 
-enable_testing()
-include(GoogleTest)
+  enable_testing()
+  include(GoogleTest)
+endif()
 
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL TRUE FORCE)
 

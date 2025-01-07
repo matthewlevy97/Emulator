@@ -1,4 +1,3 @@
-
 CreateNewEmulatorTarget(gameboy)
 
 target_sources(gameboy
