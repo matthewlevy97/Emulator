@@ -1,9 +1,17 @@
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 #include "emumanager.h"
 
+#include <debugger/debugger.h>
+
 int main()
 {
+    spdlog::set_level(spdlog::level::debug);
+
+    auto debugger = emulator::debugger::Debugger(1234);
+    while(true) continue;
+
     auto manager = new emulator::core::EmulatorManager();
     if (!manager->LoadEmulator("gameboy")) {
         return -1;
