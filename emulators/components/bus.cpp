@@ -10,12 +10,13 @@ Bus::~Bus() {
     }
 }
 
-void Bus::AddComponent(IComponent* component) {
+void Bus::AddComponent(IComponent* component) noexcept
+{
     component->AttachToBus(this);
     components_.push_back(component);
 }
 
-void Bus::RemoveComponent(IComponent* component)
+void Bus::RemoveComponent(IComponent* component) noexcept
 {
     for (auto& addressable : addressRanges_) {
         if (addressable.component == component) {
@@ -32,7 +33,8 @@ void Bus::RemoveComponent(IComponent* component)
     );
 }
 
-bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::size_t, std::size_t> range) {
+bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::size_t, std::size_t> range) noexcept
+{
     for (const auto& addressable : addressRanges_) {
         // If new address is within an existing address range, return false
         if (range.first >= addressable.start && range.first < addressable.end) {
@@ -50,6 +52,33 @@ bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::si
     });
 
     return true;
+}
+
+void Bus::AddMemoryWatchPoint(MemoryWatchAddress addr) noexcept
+{
+    for (const auto& watch : memoryWatchPoints_) {
+        if (watch == addr) {
+            return;
+        }
+    }
+
+    memoryWatchPoints_.push_back(addr);
+}
+
+void Bus::RemoveMemoryWatchPoint(MemoryWatchAddress addr) noexcept
+{
+    for (std::size_t i = 0; i < memoryWatchPoints_.size(); ++i) {
+        if (memoryWatchPoints_[i] == addr) {
+            memoryWatchPoints_[i] = memoryWatchPoints_.back();
+            memoryWatchPoints_.pop_back();
+            return;
+        }
+    }
+}
+
+void Bus::RegisterMemoryWatchCallback(MemoryWatchCallback callback) noexcept
+{
+    memoryWatchCallback_ = callback;
 }
 
 void Bus::ReceiveTick()

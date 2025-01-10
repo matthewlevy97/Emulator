@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -12,8 +13,8 @@ private:
     std::vector<IComponent*> components_;
 
     struct AddressRange {
-        std::size_t start;
-        std::size_t end;
+        std::uint64_t start;
+        std::uint64_t end;
 
         IComponent* component;
 
@@ -26,6 +27,11 @@ private:
         }
     };
 
+    using MemoryWatchAddress = std::uint64_t;
+    using MemoryWatchCallback = std::function<void(Bus*, MemoryWatchAddress, bool isWrite)>;
+    std::vector<MemoryWatchAddress> memoryWatchPoints_;
+    MemoryWatchCallback memoryWatchCallback_{nullptr};
+
     std::vector<AddressRange> addressRanges_;
 
 public:
@@ -35,9 +41,13 @@ public:
     template <typename T>
     struct always_false : std::false_type {};
 
-    void AddComponent(IComponent* component);
-    void RemoveComponent(IComponent* component);
-    bool RegisterComponentAddressRange(IComponent* component, std::pair<size_t, std::size_t> range);
+    void AddComponent(IComponent* component) noexcept;
+    void RemoveComponent(IComponent* component) noexcept;
+    bool RegisterComponentAddressRange(IComponent* component, std::pair<size_t, std::size_t> range) noexcept;
+
+    void AddMemoryWatchPoint(MemoryWatchAddress) noexcept;
+    void RemoveMemoryWatchPoint(MemoryWatchAddress) noexcept;
+    void RegisterMemoryWatchCallback(MemoryWatchCallback) noexcept;
 
     void ReceiveTick();
 
@@ -49,6 +59,14 @@ public:
         static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>,
             "Read function only accepts integral or floating point types.");
         
+        // TODO: Improve so not O(n)
+        for (const auto& watch : memoryWatchPoints_) {
+            if (watch == address) {
+                memoryWatchCallback_(this, address, false);
+                break;
+            }
+        }
+
         for (const auto& addressable : addressRanges_) {
             if (address >= addressable.start && address <= addressable.end) {
                 if constexpr (std::is_same_v<T, uint8_t>) {
@@ -77,6 +95,14 @@ public:
     void Write(std::size_t address, T value) {
         static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value,
             "Write function only accepts integral or floating point types.");
+
+        // TODO: Improve so not O(n)
+        for (const auto& watch : memoryWatchPoints_) {
+            if (watch == address) {
+                memoryWatchCallback_(this, address, true);
+                break;
+            }
+        }
 
         for (const auto& addressable : addressRanges_) {
             if (address >= addressable.start && address <= addressable.end) {
