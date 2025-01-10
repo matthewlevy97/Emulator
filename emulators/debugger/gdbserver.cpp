@@ -12,7 +12,7 @@ GDBServerConnection::GDBServerConnection(Debugger* debugger, socket::DebuggerSoc
 GDBServerConnection::~GDBServerConnection()
 {}
 
-void GDBServerConnection::ServeWhile(volatile bool& check)
+void GDBServerConnection::ServeWhile(volatile bool& check) noexcept
 {
     if (client_ == nullptr) {
         return;
@@ -32,8 +32,10 @@ void GDBServerConnection::ServeWhile(volatile bool& check)
         case ConnectionState::RUNNING:
             ProcessRunningMessage();
             break;
+        case ConnectionState::SHUTDOWN:
+            return;
         case ConnectionState::FATAL_ERROR:
-            spdlog::debug("FATAL_ERROR");
+            spdlog::critical("Fatal Error handling GDB connection");
             return;
         }
     }
@@ -69,7 +71,52 @@ bool GDBServerConnection::SendOKResponse() noexcept
     return SendResponse("OK", 2);
 }
 
-std::size_t GDBServerConnection::ExtractPacket(GDBPacket& pkt, std::uint8_t* buf, std::size_t len)
+bool GDBServerConnection::SendSignal(std::uint8_t signal, StopReason reason) noexcept
+{
+    std::string msg;
+    
+    switch (reason) {
+    case StopReason::NONE:
+        msg = std::format("S{:02X}", signal);
+        break;
+    case StopReason::HWBREAK:
+        msg = std::format("T{:02X}hwbreak:", kSIGTRAP);
+        break;
+    case StopReason::WATCH:
+        msg = std::format("T{:02X}watch:{:04X}", kSIGTRAP, 0); // TODO: Get address of watch address
+        break;
+    }
+
+    debugger_->GetCurrentDebugger()->HandleSignal(signal);
+    return SendResponse(msg);
+}
+
+bool GDBServerConnection::SendTerminate(std::uint8_t signal) noexcept
+{
+    std::string msg = std::format("X{:02X}", signal);
+    return SendResponse(msg);
+}
+
+bool GDBServerConnection::SendDebugMessage(std::string str) noexcept
+{
+    if (!debugger_->GetCurrentDebugger()->IsStopped()) {
+        return false;
+    }
+
+    std::string msg = "O";
+    for (const auto& c : str) {
+        msg += std::format("{:02x}", static_cast<unsigned char>(c));
+    }
+    return SendResponse(msg);
+}
+
+bool GDBServerConnection::SendError(std::uint8_t code) noexcept
+{
+    auto msg = std::format("E{:02X}", code);
+    return SendResponse(msg);
+}
+
+std::size_t GDBServerConnection::ExtractPacket(GDBPacket& pkt, std::uint8_t* buf, std::size_t len) noexcept
 {
     // Scan for end of packet
     std::size_t eop = 0;
@@ -99,10 +146,10 @@ std::size_t GDBServerConnection::ExtractPacket(GDBPacket& pkt, std::uint8_t* buf
     pkt.data = std::string((char*)buf, eop);
 
     pkt.valid = true;
-    return eop + 2;
+    return eop + 3;
 }
 
-void GDBServerConnection::ProcessHandshakeMessage()
+void GDBServerConnection::ProcessHandshakeMessage() noexcept
 {
     if (!client_->IsReadable()) {
         return;
@@ -110,15 +157,16 @@ void GDBServerConnection::ProcessHandshakeMessage()
 
     std::uint8_t* buf = nullptr;
     int n = client_->ReadAll(&buf);
-
-    // Smallest Packet Size: $#00 == 4
-    if (n < 4 || buf == nullptr) {
+    if (n <= 0 || buf == nullptr) {
+        if (n == -1) {
+            state_ = ConnectionState::SHUTDOWN;
+        }
         return;
     }
 
-    if (spdlog::get_level() <= spdlog::level::debug) {
+    if (spdlog::get_level() <= spdlog::level::trace) {
         std::string msg((char*)buf, n);
-        spdlog::debug("GDBServerConnection::ProcessHandshakeMessage Recv: {}", msg);
+        spdlog::trace("{}:{} Recv: {}", __FUNCTION__, __LINE__, msg);
     }
 
     std::size_t cursor = 0;
@@ -129,7 +177,7 @@ void GDBServerConnection::ProcessHandshakeMessage()
                 cursor++;
             } else {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
         }
 
@@ -140,47 +188,46 @@ void GDBServerConnection::ProcessHandshakeMessage()
             cursor += ExtractPacket(packet, buf + cursor, n - cursor);
         } else {
             state_ = ConnectionState::FATAL_ERROR;
-            return;
+            break;
         }
 
         if (!packet.valid) {
             state_ = ConnectionState::FATAL_ERROR;
-            return;
+            break;
         }
 
         if (packet.data == "QStartNoAckMode" ||
             packet.data == "QThreadSuffixSupported") {
             if (!SendOKResponse()) {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
             QStartNoAckMode_ = true;
         } else if (packet.data == "qHostInfo") {
-            auto debugger = debugger_->GetCurrentDebugger();
             auto msg = std::format("hostname:emulator;vendor:{}",
-                debugger ? debugger->GetName() : "UNKNOWN"
+                debugger_->GetCurrentDebugger()->GetName()
             );
 
             if (!SendResponse(msg)) {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
         } else if (packet.data == "qProcessInfo") {
             auto debugger = debugger_->GetCurrentDebugger();
             auto msg = std::format("pid:{};vendor:{}",
-                debugger ? debugger->GetCurrentPID() : 1,
-                debugger ? debugger->GetName() : "UNKNOWN"
+                debugger->GetCurrentPID(),
+                debugger->GetName()
             );
 
             if (!SendResponse(msg)) {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
         } else if (packet.data.starts_with("qGetWorkingDir")) {
             // Just say root directory
             if (!SendResponse("2f", 2)) {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
         } else if (packet.data.starts_with("qSupported")) {
             // Handle supported options
@@ -189,7 +236,7 @@ void GDBServerConnection::ProcessHandshakeMessage()
             std::string msg = "vCont;c;s;t;r";
             if (!SendResponse(msg)) {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
         } else if (packet.data == "?") {
             SendSignal(kSIGTRAP);
@@ -197,19 +244,19 @@ void GDBServerConnection::ProcessHandshakeMessage()
         } else if (packet.data == "c") {
             SendOKResponse();
             state_ = ConnectionState::RUNNING;
-        } else if (packet.data == "k") {
-            SendEmptyResponse();
         } else if (packet.data == "QEnableErrorStrings" || packet.data == "qVAttachOrWaitSupported") {
             // Ignore These Packets
             SendEmptyResponse();
         } else {
-            spdlog::info("Unknown Packet: {}", packet.data);
+            spdlog::debug("Unknown Handshake Packet: {}", packet.data);
             SendEmptyResponse();
         }
     }
+
+    delete[] buf;
 }
 
-void GDBServerConnection::ProcessRunningMessage()
+void GDBServerConnection::ProcessRunningMessage() noexcept
 {
     if (!client_->IsReadable()) {
         return;
@@ -217,30 +264,26 @@ void GDBServerConnection::ProcessRunningMessage()
 
     std::uint8_t* buf = nullptr;
     int n = client_->ReadAll(&buf);
-
-    for (int i = 0; i < n; i++)
-        spdlog::info("RECV: {}", buf[i]);
-    spdlog::info("DONE");
-
-    // Smallest Packet Size: $#00 == 4
-    if (n < 4 || buf == nullptr) {
+    if (n <= 0 || buf == nullptr) {
+        if (n == -1) {
+            state_ = ConnectionState::SHUTDOWN;
+        }
         return;
     }
 
-    if (spdlog::get_level() <= spdlog::level::debug) {
+    if (spdlog::get_level() <= spdlog::level::trace) {
         std::string msg((char*)buf, n);
-        spdlog::debug("GDBServerConnection::ProcessRunningMessage Recv: {}", msg);
+        spdlog::trace("{}:{} Recv: {}", __FUNCTION__, __LINE__, msg);
     }
 
     std::size_t cursor = 0;
-
     while (cursor < n) {
         if (!QStartNoAckMode_) {
             if (buf[cursor] == '+') [[likely]] {
                 cursor++;
             } else {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
         }
 
@@ -252,55 +295,75 @@ void GDBServerConnection::ProcessRunningMessage()
         } else {
             // Not a packet so figure out what to do
             if (!ProcessRunningNonPacket(buf, cursor, n)) {
-                return;
+                break;
             }
             continue;
         }
 
         if (!packet.valid) {
             state_ = ConnectionState::FATAL_ERROR;
-            return;
+            break;
         }
 
         if (packet.data == "qProcessInfo") {
             auto debugger = debugger_->GetCurrentDebugger();
             auto msg = std::format("pid:{};vendor:{}",
-                debugger ? debugger->GetCurrentPID() : 1,
-                debugger ? debugger->GetName() : "UNKNOWN"
+                debugger->GetCurrentPID(),
+                debugger->GetName()
             );
 
             if (!SendResponse(msg)) {
                 state_ = ConnectionState::FATAL_ERROR;
-                return;
+                break;
             }
         } else if (packet.data == "qfThreadInfo" || packet.data == "qsThreadInfo") {
             SendEmptyResponse();
+        } else if (packet.data.starts_with("qRegisterInfo")) {
+            auto regNum = std::strtol(packet.data.c_str() + sizeof("qRegisterInfo"), nullptr, 16);
+            auto regInfo = debugger_->GetCurrentDebugger()->GetRegisterInfo(regNum);
+            if (regInfo == nullptr) {
+                SendError(1);
+            } else {
+                auto regStr = regInfo->ToString();
+                SendResponse(regStr);
+            }
         } else if (packet.data == "qC") {
-            auto debugger = debugger_->GetCurrentDebugger();
-            std::string msg = std::format("QC {}", debugger ? debugger->GetCurrentPID() : 1);
+            std::string msg = std::format("QC {}", debugger_->GetCurrentDebugger()->GetCurrentPID());
             SendResponse(msg);
         } else if (packet.data == "?") {
             SendSignal(kSIGTRAP);
         } else if (packet.data == "k") {
+            state_ = ConnectionState::SHUTDOWN;
             SendEmptyResponse();
         } else if (packet.data == "c") {
+            debugger_->GetCurrentDebugger()->RunCPU();
             SendOKResponse();
         } else if (packet.data.starts_with("vCont")) {
             HandleVCont(packet);
+        } else if (packet.data[0] == 'm' || packet.data[0] == 'x') {
+            // Memory inspect
+            HandleMemoryInspect(packet);
         } else {
-            spdlog::info("Unknown Packet: {}", packet.data);
+            spdlog::debug("Unknown MainLoop Packet: {}", packet.data);
             SendEmptyResponse();
         }
     }
+
+    delete[] buf;
 }
 
-bool GDBServerConnection::ProcessRunningNonPacket(std::uint8_t* buf, std::size_t& cursor, std::size_t len)
+bool GDBServerConnection::ProcessRunningNonPacket(std::uint8_t* buf, std::size_t& cursor, std::size_t len) noexcept
 {
-    // TODO: Handle this
-    return true;
+    if ((int)buf[cursor] == 0x03) {
+        spdlog::trace("GDBServerConnection Recv: CTRL+C");
+        cursor++;
+        return SendSignal(kSIGTRAP);
+    }
+
+    return false;
 }
 
-void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt)
+void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt) noexcept
 {
     // Request: qSupported [:gdbfeature [;gdbfeature]...]
     std::unordered_map<std::string, std::string> kv;
@@ -311,7 +374,7 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt)
     while (*tmp != '\0' && *tmp != ':') tmp++;
     if (*tmp == '\0') {
         // No Options
-        spdlog::info("qSupported Packet contains no options");
+        spdlog::debug("qSupported Packet contains no options");
         return;
     }
     tmp++; // Move past ':'
@@ -338,7 +401,7 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt)
         }
     }
 
-    std::unordered_map<std::string, bool> supportedFeatures = {
+    static std::unordered_map<std::string, bool> supportedFeatures = {
         {"QStartNoAckMode", true},
         {"hwbreak", true},
         {"qXfer:memory-map:read", true},
@@ -352,7 +415,7 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt)
 
     std::string response = "";
     for (const auto& opt : kv) {
-        spdlog::debug("GDBServerConnection::HandleQSupportedPacket Requested Options: {} = {}", opt.first, opt.second);
+        spdlog::trace("GDBServerConnection::HandleQSupportedPacket Requested Options: {} = {}", opt.first, opt.second);
 
         auto it = supportedFeatures.find(opt.first);
         if (it != supportedFeatures.end()) {
@@ -372,7 +435,7 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt)
     SendResponse(response);
 }
 
-void GDBServerConnection::HandleVCont(GDBPacket& pkt)
+void GDBServerConnection::HandleVCont(GDBPacket& pkt) noexcept
 {
     auto cmd = pkt.data.find_first_of(";");
     if (cmd == std::string::npos) {
@@ -395,58 +458,40 @@ void GDBServerConnection::HandleVCont(GDBPacket& pkt)
     // Only support 1 thread for now
     if (actions.size() < 1) {
         // Just resume
-        isStopped_ = false;
+        debugger_->GetCurrentDebugger()->RunCPU();
         SendOKResponse();
     } else {
         if (actions[0].starts_with("c")) {
-            isStopped_ = false;
+            debugger_->GetCurrentDebugger()->RunCPU();
             SendOKResponse();
         } else if (actions[0].starts_with("s")) {
-            isStopped_ = false;
-            // TODO: Single step CPU
+            // Single step CPU
+            debugger_->GetCurrentDebugger()->StepCPU(1);
             SendOKResponse();
         } else if (actions[0].starts_with("t")) {
-            isStopped_ = true;
             SendSignal(kSIGTRAP);
         }
     }
 }
 
-bool GDBServerConnection::SendSignal(std::uint8_t signal, StopReason reason)
+void GDBServerConnection::HandleMemoryInspect(GDBPacket& pkt) noexcept
 {
-    std::string msg;
-    
-    switch (reason) {
-    case StopReason::NONE:
-        msg = std::format("S {:02X}", signal);
-        break;
-    case StopReason::HWBREAK:
-        msg = std::format("T {:02X} hwbreak:", kSIGTRAP);
-        break;
-    case StopReason::WATCH:
-        msg = std::format("T {:02X} watch:{:04X}", kSIGTRAP, 0); // TODO: Get address of watch address
-        break;
+    char* endptr = nullptr;
+    auto addr = std::strtoll(pkt.data.c_str() + 1, &endptr, 16);
+    std::size_t length = std::strtoll(endptr+1, nullptr, 16);
+
+    // Read memory from system
+    auto memory = debugger_->GetCurrentDebugger()->ReadMemory(addr, length);
+    if (memory == nullptr) {
+        if (pkt.data[0] == 'x') SendError(1);
+        else SendEmptyResponse();
     }
 
-    isStopped_ = true;
-    return SendResponse(msg);
-}
-
-bool GDBServerConnection::SendTerminate(std::uint8_t signal)
-{
-    std::string msg = std::format("X {:02X}", signal);
-    return SendResponse(msg);
-}
-
-bool GDBServerConnection::SendDebugMessage(std::string msg)
-{
-    if (!isStopped_) {
-        return false;
+    std::string hexStr = pkt.data[0] == 'm' ? "" : "b ";
+    for (std::size_t i = 0; i < length; i++) {
+        hexStr += std::format("{:02x}", memory[i]);
     }
-
-    // TODO: O XX… (‘XX…’ is hex encoding of ASCII data)
-
-    return true;
+    SendResponse(hexStr);
 }
 
 }; // namespace emulator::debugger

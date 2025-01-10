@@ -4,9 +4,11 @@
 #include "socket/client.h"
 #include "socket/server.h"
 
+#include <chrono>
+
 namespace emulator::debugger {
 
-Debugger::Debugger(std::uint16_t port, bool onlyLocalhost) : currentDebugger_(nullptr)
+Debugger::Debugger(std::uint16_t port, bool onlyLocalhost) : runServerThread_(false), currentDebugger_(nullptr)
 {
     serverThread_ = std::thread{[&, this]() {
         runServerThread_ = true;
@@ -14,6 +16,12 @@ Debugger::Debugger(std::uint16_t port, bool onlyLocalhost) : currentDebugger_(nu
         auto server = socket::DebuggerSocketServer(port, onlyLocalhost);
 
         while (runServerThread_) {
+            if (currentDebugger_ == nullptr) {
+                // Prevent doing anything until a system is chosen and debugger loaded
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                continue;
+            }
+
             if (client == nullptr) {
                 client = server.Accept();
             } else {

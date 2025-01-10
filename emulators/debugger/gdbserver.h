@@ -20,6 +20,7 @@ private:
         PRECONNECT,
         HANDSHAKE,
         RUNNING,
+        SHUTDOWN,
         FATAL_ERROR
     } state_;
 
@@ -33,31 +34,30 @@ private:
     bool SendEmptyResponse() noexcept;
     bool SendOKResponse() noexcept;
 
-    bool isStopped_{false};
-
-    static constexpr int kSIGTRAP = 5;
     enum class StopReason {
         NONE,
         WATCH,
         HWBREAK
     };
-    bool SendSignal(std::uint8_t signal, StopReason = StopReason::NONE);
-    bool SendTerminate(std::uint8_t signal);
-    bool SendDebugMessage(std::string);
+    bool SendSignal(std::uint8_t signal, StopReason = StopReason::NONE) noexcept;
+    bool SendTerminate(std::uint8_t signal) noexcept;
+    bool SendDebugMessage(std::string) noexcept;
+    bool SendError(std::uint8_t) noexcept;
 
-    std::size_t ExtractPacket(GDBPacket&, std::uint8_t*, std::size_t);
-    void ProcessHandshakeMessage();
-    void ProcessRunningMessage();
-    bool ProcessRunningNonPacket(std::uint8_t*, std::size_t&, std::size_t);
+    std::size_t ExtractPacket(GDBPacket&, std::uint8_t*, std::size_t) noexcept;
+    void ProcessHandshakeMessage() noexcept;
+    void ProcessRunningMessage() noexcept;
+    bool ProcessRunningNonPacket(std::uint8_t*, std::size_t&, std::size_t) noexcept;
 
-    void HandleQSupportedPacket(GDBPacket&);
-    void HandleVCont(GDBPacket& pkt);
+    void HandleQSupportedPacket(GDBPacket&) noexcept;
+    void HandleVCont(GDBPacket&) noexcept;
+    void HandleMemoryInspect(GDBPacket&) noexcept;
 
 public:
     GDBServerConnection(Debugger* debugger, socket::DebuggerSocketClient* client);
     ~GDBServerConnection();
 
-    void ServeWhile(volatile bool&);
+    void ServeWhile(volatile bool&) noexcept;
 };
 
 }; // namespace emulator::debugger

@@ -48,15 +48,16 @@ bool DebuggerSocketClient::IsWritable() noexcept
 
 int DebuggerSocketClient::ReadAll(std::uint8_t** data) noexcept
 {
+    *data = nullptr;
     if (client_ == INVALID_SOCKET) {
         return -1;
     }
 
     int bufLen = 0;
     std::size_t bufCap = 4096;
-    std::uint8_t *buf = new std::uint8_t[bufCap];
+    std::uint8_t *buf = new std::uint8_t[bufCap+1];
 
-    do {
+    while (IsReadable()) {
         auto n = recv(client_, buf, bufCap, MSG_DONTWAIT);
         if (n < 0) {
             delete[] buf;
@@ -67,16 +68,24 @@ int DebuggerSocketClient::ReadAll(std::uint8_t** data) noexcept
 
         // Could not fill buffer, so end of the stream
         if (bufLen < bufCap || n == 0) {
-            *data = buf;
-            return bufLen;
+            break;
         }
 
         // Resize for more data
         bufCap += 4096;
-        auto bufNew = new std::uint8_t[bufCap];
+        auto bufNew = new std::uint8_t[bufCap+1];
         std::memcpy(bufNew, buf, bufLen);
         buf = bufNew;
-    } while (true);
+    };
+
+    if (bufLen > 0) {
+        buf[bufLen+1] = 0x00;
+        *data = buf;
+    } else {
+        delete[] buf;
+    }
+
+    return bufLen;
 }
 
 int DebuggerSocketClient::Write(const std::uint8_t* data, std::size_t len) noexcept

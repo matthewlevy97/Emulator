@@ -8,6 +8,7 @@
 int main()
 {
     spdlog::set_level(spdlog::level::debug);
+    spdlog::set_pattern("[%Y-%m-%d %T.%e] [%^%l%$] %v");
 
     auto debugger = emulator::debugger::Debugger(1234);
     while(true) continue;
