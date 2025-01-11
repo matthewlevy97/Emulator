@@ -2,6 +2,7 @@
 
 #include <string>
 #include <format>
+#include <functional>
 
 namespace emulator::debugger {
 
@@ -134,6 +135,12 @@ class ISystemDebugger {
 protected:
     std::string name_;
 
+    bool stepMode_{false}; // Determine if the CPU should step or not
+    std::size_t stepCount_{0};
+    std::function<void(void)> stepCompleteCallback_{nullptr};
+
+    mutable bool stopped_{true};
+
 public:
     ISystemDebugger(std::string name) : name_(name)
     {}
@@ -141,25 +148,39 @@ public:
     virtual ~ISystemDebugger() = default;
 
     std::string GetName() const noexcept { return name_; }
+    bool IsStopped() const noexcept { return stopped_; };
 
     virtual std::uint32_t GetCurrentPID() const noexcept { return 1; }
-    virtual std::uint32_t GetPtrSize() const noexcept { return 4; }
 
-    virtual RegisterInfo* GetRegisterInfo(std::size_t regNum) const noexcept = 0;
+    virtual constexpr std::uint32_t GetPtrSize() const noexcept = 0;
+
+    virtual const RegisterInfo* GetRegisterInfo(std::size_t regNum) const noexcept = 0;
 
     virtual void HandleSignal(std::uint8_t signal) const noexcept = 0;
 
-    virtual std::uint64_t GetRegister(std::string name) const noexcept = 0;
+    virtual bool GetRegister(std::string name, std::uint64_t&) const noexcept = 0;
     virtual bool SetRegister(std::string name, std::uint64_t) noexcept = 0;
 
     virtual std::uint8_t* ReadMemory(Address, std::size_t&) const noexcept = 0;
     virtual bool WriteMemory(Address, void*, std::size_t) noexcept = 0;
 
-    virtual void StepCPU(std::size_t instructions) noexcept = 0;
-    virtual void RunCPU() noexcept = 0;
-    virtual void ShutdownCPU() noexcept = 0;
+    virtual void StepCPU(std::size_t instructions, std::function<void(void)> callback = nullptr) noexcept
+    {
+        stepCompleteCallback_ = callback;
+        stepCount_ = instructions;
+        stepMode_ = true;
+        stopped_ = false;
+    }
 
-    virtual bool IsStopped() const noexcept = 0;
+    virtual void RunCPU() noexcept
+    {
+        stepCount_ = 0;
+        stepMode_ = false;
+        stopped_ = false;
+    }
+
+    virtual void ShutdownCPU() noexcept
+    {}
 };
 
 

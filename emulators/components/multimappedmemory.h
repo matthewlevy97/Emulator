@@ -29,7 +29,7 @@ private:
                 return address - base;
             }
         }
-        throw std::out_of_range("Cannot normalize multi-mapped memory for OOB address.");
+        throw InvalidAddress(address, "Cannot normalize multi-mapped memory for OOB address.");
     }
 
 public:
@@ -42,7 +42,7 @@ public:
     {
         for (const auto& [base, bound] : addressRanges_) {
             if (!bus->RegisterComponentAddressRange(this, { base, bound })) {
-                throw AddressInUse();
+                throw AddressInUse(base, bound - base);
             }
         }
         this->bus_ = bus;
@@ -51,7 +51,7 @@ public:
     void WriteInt8(std::size_t address, std::int8_t value) override
     {
         if (!InMemoryRange(address, sizeof(value))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::WRITE, "Not in range of multi-mapped memory.");
         }
         Memory<mtype>::WriteInt8(NormalizeToBaseAddress(address), value);
     }
@@ -59,7 +59,7 @@ public:
     void WriteUInt8(std::size_t address, std::uint8_t value) override
     {
         if (!InMemoryRange(address, sizeof(value))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::WRITE, "Not in range of multi-mapped memory.");
         }
         Memory<mtype>::WriteUInt8(NormalizeToBaseAddress(address), value);
     }
@@ -67,7 +67,7 @@ public:
     void WriteInt16(std::size_t address, std::int16_t value) override
     {
         if (!InMemoryRange(address, sizeof(value))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::WRITE, "Not in range of multi-mapped memory.");
         }
         Memory<mtype>::WriteInt16(NormalizeToBaseAddress(address), value);
     }
@@ -75,7 +75,7 @@ public:
     void WriteUInt16(std::size_t address, std::uint16_t value) override
     {
         if (!InMemoryRange(address, sizeof(value))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::WRITE, "Not in range of multi-mapped memory.");
         }
         Memory<mtype>::WriteUInt16(NormalizeToBaseAddress(address), value);
     }
@@ -84,7 +84,7 @@ public:
     {
         // Validate in one of our address ranges
         if (!InMemoryRange(address, sizeof(value))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::WRITE, "Not in range of multi-mapped memory.");
         }
         Memory<mtype>::WriteInt32(NormalizeToBaseAddress(address), value);
     }
@@ -92,7 +92,7 @@ public:
         void WriteUInt32(std::size_t address, std::uint32_t value) override
     {
         if (!InMemoryRange(address, sizeof(value))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::WRITE, "Not in range of multi-mapped memory.");
         }
         Memory<mtype>::WriteUInt32(NormalizeToBaseAddress(address), value);
     }
@@ -100,7 +100,7 @@ public:
     std::int8_t ReadInt8(std::size_t address) override
     {
         if (!InMemoryRange(address, sizeof(std::int8_t))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::READ, "Not in range of multi-mapped memory.");
         }
         return Memory<mtype>::ReadInt8(NormalizeToBaseAddress(address));
     }
@@ -108,7 +108,7 @@ public:
     std::uint8_t ReadUInt8(std::size_t address) override
     {
         if (!InMemoryRange(address, sizeof(std::uint8_t))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::READ, "Not in range of multi-mapped memory.");
         }
         return Memory<mtype>::ReadUInt8(NormalizeToBaseAddress(address));
     }
@@ -116,7 +116,7 @@ public:
     std::int16_t ReadInt16(std::size_t address) override
     {
         if (!InMemoryRange(address, sizeof(std::int16_t))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::READ, "Not in range of multi-mapped memory.");
         }
         return Memory<mtype>::ReadInt16(NormalizeToBaseAddress(address));
     }
@@ -124,7 +124,7 @@ public:
     std::uint16_t ReadUInt16(std::size_t address) override
     {
         if (!InMemoryRange(address, sizeof(std::uint16_t))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::READ, "Not in range of multi-mapped memory.");
         }
         return Memory<mtype>::ReadUInt16(NormalizeToBaseAddress(address));
     }
@@ -132,7 +132,7 @@ public:
     std::uint32_t ReadUInt32(std::size_t address) override
     {
         if (!InMemoryRange(address, sizeof(std::uint32_t))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::READ, "Not in range of multi-mapped memory.");
         }
         return Memory<mtype>::ReadUInt32(NormalizeToBaseAddress(address));
     }
@@ -141,7 +141,7 @@ public:
     {
         // Validate in one of our address ranges
         if (!InMemoryRange(address, sizeof(std::int32_t))) {
-            throw std::out_of_range("Not in range of multi-mapped memory.");
+            throw InvalidAddress(address, InvalidAddress::AccessType::READ, "Not in range of multi-mapped memory.");
         }
         return Memory<mtype>::ReadInt32(NormalizeToBaseAddress(address));
     }

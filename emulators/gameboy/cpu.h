@@ -5,11 +5,11 @@
 #include <type_traits>
 #include <utility>
 
-#include <components/component.h>
+#include <components/cpu.h>
 
 namespace emulator::gameboy {
 
-class CPU : public emulator::component::IComponent {
+class CPU : public emulator::component::CPU {
 private:
     using MicroCode = std::function<void(CPU*)>;
     std::array<MicroCode, 32> microcode_;

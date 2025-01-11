@@ -3,6 +3,7 @@
 #include "bus.h"
 #include "memory.h"
 #include "exceptions/AddressInUse.h"
+#include "exceptions/InvalidAddress.h"
 
 // Test adding RAM to bus
 TEST(ComponentBUS, AddRAM)
@@ -55,8 +56,8 @@ TEST(ComponentBUS, InvalidAddressComponent)
 
     ASSERT_NO_THROW(bus.AddComponent(ram));
 
-    ASSERT_THROW(bus.Read<std::uint8_t>(2048), std::out_of_range);
-    ASSERT_THROW(bus.Write<std::uint16_t>(2048, 0xCAFE), std::out_of_range);
+    ASSERT_THROW(bus.Read<std::uint8_t>(2048), emulator::component::InvalidAddress);
+    ASSERT_THROW(bus.Write<std::uint16_t>(2048, 0xCAFE), emulator::component::InvalidAddress);
 }
 
 // Test removing component from bus
@@ -81,8 +82,8 @@ TEST(ComponentBUS, RemoveComponentAccessAddress)
 
     bus.RemoveComponent(ram);
 
-    ASSERT_THROW(bus.Read<std::uint8_t>(512), std::out_of_range);
-    ASSERT_THROW(bus.Write<std::uint16_t>(0x50, 0xCAFE), std::out_of_range);
+    ASSERT_THROW(bus.Read<std::uint8_t>(512), emulator::component::InvalidAddress);
+    ASSERT_THROW(bus.Write<std::uint16_t>(0x50, 0xCAFE), emulator::component::InvalidAddress);
 }
 
 // Test reading from RAM each primitive type over bus

@@ -28,6 +28,7 @@ private:
     socket::DebuggerSocketClient* client_;
 
     bool QStartNoAckMode_{false};
+    bool alreadyProcessedAck_{false};
 
     bool SendResponse(std::string&) noexcept;
     bool SendResponse(const char*, std::size_t) noexcept;
@@ -47,6 +48,8 @@ private:
     std::size_t ExtractPacket(GDBPacket&, std::uint8_t*, std::size_t) noexcept;
     void ProcessHandshakeMessage() noexcept;
     void ProcessRunningMessage() noexcept;
+    void ProcessRunningPacket(std::uint8_t*, std::size_t, std::size_t&) noexcept;
+    void ProcessRunningNotification(std::uint8_t*, std::size_t, std::size_t&) noexcept;
     bool ProcessRunningNonPacket(std::uint8_t*, std::size_t&, std::size_t) noexcept;
 
     void HandleQSupportedPacket(GDBPacket&) noexcept;

@@ -18,16 +18,16 @@ TEST(ComponentMultiMappedMemory, InvalidAddress)
     );
 
     // Under base address
-    ASSERT_THROW(ram.ReadUInt8(0), std::out_of_range);
-    ASSERT_THROW(ram.WriteUInt8(0, 0), std::out_of_range);
+    ASSERT_THROW(ram.ReadUInt8(0), emulator::component::InvalidAddress);
+    ASSERT_THROW(ram.WriteUInt8(0, 0), emulator::component::InvalidAddress);
 
     // Over end address
-    ASSERT_THROW(ram.ReadUInt8(0x100 + 1024 + 32), std::out_of_range);
-    ASSERT_THROW(ram.WriteUInt8(0x100 + 1024 + 32, 0), std::out_of_range);
+    ASSERT_THROW(ram.ReadUInt8(0x100 + 1024 + 32), emulator::component::InvalidAddress);
+    ASSERT_THROW(ram.WriteUInt8(0x100 + 1024 + 32, 0), emulator::component::InvalidAddress);
 
     // Overlap end of memory
-    ASSERT_THROW(ram.ReadUInt32(0x100 + 1024 - 1), std::out_of_range);
-    ASSERT_THROW(ram.WriteUInt32(0x100 + 1024 - 1, 0), std::out_of_range);
+    ASSERT_THROW(ram.ReadUInt32(0x100 + 1024 - 1), emulator::component::InvalidAddress);
+    ASSERT_THROW(ram.WriteUInt32(0x100 + 1024 - 1, 0), emulator::component::InvalidAddress);
 }
 
 TEST(ComponentMultiMappedMemory, ReadWriteToMultiMapped)

@@ -6,13 +6,8 @@ function(CreateNewEmulatorTarget target_name)
     target_include_directories(${target_name}
         PRIVATE
             ${CMAKE_SOURCE_DIR}/emulators
+            ${CMAKE_SOURCE_DIR}/emulators/debugger
     )
-    if(CMAKE_BUILD_TYPE MATCHES "Debug")
-        target_link_libraries(${target_name}
-            PRIVATE
-                gtest
-        )
-    endif()
     target_link_libraries(${target_name}
         PRIVATE
             spdlog::spdlog_header_only

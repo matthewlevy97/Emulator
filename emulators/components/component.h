@@ -1,5 +1,7 @@
 #pragma once
 
+#include "exceptions/InvalidAddress.h"
+
 namespace emulator::component {
 
 class Bus;
@@ -22,7 +24,7 @@ protected:
     std::size_t ValidateAndNormalizeAddress(std::size_t address)
     {
         if (!ValidateAddress<T>(address)) {
-            throw std::out_of_range("Invalid address");
+            throw InvalidAddress(address);
         }
         return address - baseAddress_;
     }

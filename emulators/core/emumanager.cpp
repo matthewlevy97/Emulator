@@ -1,5 +1,7 @@
 #include "emumanager.h"
 
+#include <spdlog/spdlog.h>
+
 #include <filesystem>
 
 #ifdef _WIN32
@@ -14,10 +16,11 @@
 
 namespace emulator::core {
 
-EmulatorManager::EmulatorManager() {
-}
+EmulatorManager::EmulatorManager(std::uint16_t debuggerPort) : debugger_(debuggerPort, true)
+{}
 
-EmulatorManager::~EmulatorManager() {
+EmulatorManager::~EmulatorManager() noexcept
+{
     for (auto& it : loadedEmulators_) {
 #ifdef _WIN32
         FreeLibrary(it.second);
@@ -27,9 +30,11 @@ EmulatorManager::~EmulatorManager() {
     }
 }
 
-bool EmulatorManager::LoadEmulator(std::string name) {
+bool EmulatorManager::LoadEmulator(std::string name) noexcept
+{
     // Don't reload the emulator if it's already loaded
     if (loadedEmulators_.find(name) != loadedEmulators_.end()) {
+        spdlog::info("Already loaded emulator: {}", name);
         return true;
     }
 
@@ -42,6 +47,7 @@ bool EmulatorManager::LoadEmulator(std::string name) {
 
 #ifdef _WIN32
     if(!GetModuleFileName(NULL, buffer, sizeof(buffer))) {
+        spdlog::debug("{}: GetModuleFileName failed", __FUNCTION__, name);
         return false;
     }
     std::string exePath = std::string(buffer);
@@ -50,6 +56,7 @@ bool EmulatorManager::LoadEmulator(std::string name) {
 #elif __APPLE__
     uint32_t size = sizeof(buffer);
     if (_NSGetExecutablePath(buffer, &size)) {
+        spdlog::debug("{}: _NSGetExecutablePath failed", __FUNCTION__, name);
         return false;
     }
     std::string exePath = std::string(buffer);
@@ -68,19 +75,16 @@ bool EmulatorManager::LoadEmulator(std::string name) {
     
 #ifdef _WIN32
     sharedObjectPath = sharedObjectPath +
-        std::filesystem::path::preferred_separator +
         "systems" +
         std::filesystem::path::preferred_separator +
         name + ".dll";
 #elif __APPLE__
     sharedObjectPath = sharedObjectPath +
-        std::filesystem::path::preferred_separator +
         "systems" +
         std::filesystem::path::preferred_separator +
         "lib" + name + ".dylib";
 #else
     sharedObjectPath = sharedObjectPath +
-        std::filesystem::path::preferred_separator +
         "systems" +
         std::filesystem::path::preferred_separator +
         "lib" + name + ".so";
@@ -90,11 +94,13 @@ bool EmulatorManager::LoadEmulator(std::string name) {
 #ifdef _WIN32
     handle = LoadLibrary(sharedObjectPath.c_str());
     if (!handle) {
+        spdlog::debug("{}: Failed loading library: {}", __FUNCTION__, sharedObjectPath);
         return false;
     }
 #else
     handle = dlopen(sharedObjectPath.c_str(), RTLD_LAZY);
-    if (!handle) {
+    if (handle == nullptr) {
+        spdlog::debug("{}: Failed loading library: {} {}", __FUNCTION__, sharedObjectPath, dlerror());
         return false;
     }
     dlerror();
@@ -104,7 +110,7 @@ bool EmulatorManager::LoadEmulator(std::string name) {
     return true;
 }
 
-component::CreateSystemFunc EmulatorManager::GetSystem(std::string name)
+component::CreateSystemFunc EmulatorManager::GetSystem(std::string name) noexcept
 {
     static const char* symbolName = "CreateSystem";
 

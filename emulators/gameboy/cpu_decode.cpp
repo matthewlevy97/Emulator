@@ -1,5 +1,8 @@
-#include <components/bus.h>
 #include "cpu.h"
+
+#include <components/bus.h>
+
+#include <spdlog/spdlog.h>
 
 namespace emulator::gameboy {
 
@@ -1504,6 +1507,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         break;
 
     default:
+        spdlog::critical("Unknown Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>());
         throw std::runtime_error("Unknown opcode");
     }
 }

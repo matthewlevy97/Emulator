@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "exceptions/InvalidAddress.h"
 #include "component.h"
 
 namespace emulator::component {
@@ -88,7 +89,7 @@ public:
                 }
             }
         }
-        throw std::out_of_range("No component found for read address on bus");
+        throw InvalidAddress(address, InvalidAddress::AccessType::READ);
     }
 
     template <typename T>
@@ -132,7 +133,7 @@ public:
                 }
             }
         }
-        throw std::out_of_range("No component found for write address on bus");
+        throw InvalidAddress(address, InvalidAddress::AccessType::WRITE);
     }
 };
 

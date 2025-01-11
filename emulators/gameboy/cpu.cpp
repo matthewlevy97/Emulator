@@ -28,6 +28,11 @@ void CPU::ReceiveTick()
     }
 
     if (microcodeStackLength_ == 0) {
+        // Step to next instruction
+        if (onStepCallback_) {
+            onStepCallback_();
+        }
+
         // Fetch and generate microcode for execution
         auto pc = GetRegister<Registers::PC>();
         auto opcode = bus_->Read<std::uint8_t>(pc);

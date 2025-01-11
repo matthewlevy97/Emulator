@@ -1,11 +1,15 @@
 #include "client.h"
 
+#include <spdlog/spdlog.h>
 #include <vector>
 
 namespace emulator::debugger::socket {
 
 DebuggerSocketClient::DebuggerSocketClient(SOCKET client) : client_(client)
-{}
+{
+    timeout_.tv_sec = 1;
+    timeout_.tv_usec = 0;
+}
 
 DebuggerSocketClient::~DebuggerSocketClient()
 {
@@ -48,7 +52,11 @@ bool DebuggerSocketClient::IsWritable() noexcept
 
 int DebuggerSocketClient::ReadAll(std::uint8_t** data) noexcept
 {
+    if (data == nullptr) {
+        return -1;
+    }
     *data = nullptr;
+
     if (client_ == INVALID_SOCKET) {
         return -1;
     }
@@ -85,6 +93,11 @@ int DebuggerSocketClient::ReadAll(std::uint8_t** data) noexcept
         delete[] buf;
     }
 
+    if (*data && spdlog::get_level() <= spdlog::level::trace) {
+        std::string msg((char*)*data);
+        spdlog::trace("GDBStubClient <- {}", msg);
+    }
+
     return bufLen;
 }
 
@@ -92,6 +105,15 @@ int DebuggerSocketClient::Write(const std::uint8_t* data, std::size_t len) noexc
 {
     if (client_ == INVALID_SOCKET) {
         return -1;
+    }
+
+    if (data == nullptr || len == 0) {
+        return -1;
+    }
+
+    if (data && spdlog::get_level() <= spdlog::level::trace) {
+        std::string msg((char*)data);
+        spdlog::trace("GDBStubClient -> {}", msg);
     }
 
     std::size_t offset = 0;
