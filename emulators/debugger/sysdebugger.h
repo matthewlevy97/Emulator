@@ -1,8 +1,9 @@
 #pragma once
 
-#include <string>
+#include <cstdint>
 #include <format>
 #include <functional>
+#include <string>
 
 namespace emulator::debugger {
 

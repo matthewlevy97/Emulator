@@ -1,6 +1,7 @@
 #include "socket_internal.h"
 
 #include <atomic>
+#include <cstring>
 #include <string>
 
 namespace emulator::debugger::socket::internal {
