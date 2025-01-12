@@ -43,8 +43,8 @@ public:
     template <typename T>
     struct always_false : std::false_type {};
 
-    void AddComponent(IComponent* component) noexcept;
-    void RemoveComponent(IComponent* component) noexcept;
+    void AddComponent(IComponent* component);
+    void RemoveComponent(IComponent* component);
     bool RegisterComponentAddressRange(IComponent* component, std::pair<size_t, std::size_t> range) noexcept;
 
     void AddMemoryWatchPoint(MemoryWatchAddress) noexcept;

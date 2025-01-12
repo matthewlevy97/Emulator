@@ -10,13 +10,13 @@ Bus::~Bus() {
     }
 }
 
-void Bus::AddComponent(IComponent* component) noexcept
+void Bus::AddComponent(IComponent* component)
 {
     component->AttachToBus(this);
     components_.push_back(component);
 }
 
-void Bus::RemoveComponent(IComponent* component) noexcept
+void Bus::RemoveComponent(IComponent* component)
 {
     for (auto& addressable : addressRanges_) {
         if (addressable.component == component) {
