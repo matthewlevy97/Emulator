@@ -25,21 +25,23 @@ target_precompile_headers(EmulatorComponentsInterface
         system.h
 )
 
-# Generate unit tests for common components
-file(GLOB_RECURSE components_test_sources
-    CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/emulators/components/tests/*.cpp
-)
-add_executable(components_test ${components_test_sources})
-target_link_libraries(components_test
-    PRIVATE
-        gtest
-        gtest_main
-        EmulatorComponentsInterface
-        EmulatorComponents
-)
-target_include_directories(components_test
-        PRIVATE
-            ${CMAKE_SOURCE_DIR}/emulators
-            ${CMAKE_SOURCE_DIR}/emulators/components
+if(BUILD_TESTS)
+    # Generate unit tests for common components
+    file(GLOB_RECURSE components_test_sources
+        CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/emulators/components/tests/*.cpp
     )
-gtest_discover_tests(components_test)
+    add_executable(components_test ${components_test_sources})
+    target_link_libraries(components_test
+        PRIVATE
+            gtest
+            gtest_main
+            EmulatorComponentsInterface
+            EmulatorComponents
+    )
+    target_include_directories(components_test
+            PRIVATE
+                ${CMAKE_SOURCE_DIR}/emulators
+                ${CMAKE_SOURCE_DIR}/emulators/components
+        )
+    gtest_discover_tests(components_test)
+endif()

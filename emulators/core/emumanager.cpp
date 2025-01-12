@@ -3,8 +3,9 @@
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
+#include <format>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -22,7 +23,7 @@ EmulatorManager::EmulatorManager(std::uint16_t debuggerPort) : debugger_(debugge
 EmulatorManager::~EmulatorManager() noexcept
 {
     for (auto& it : loadedEmulators_) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
         FreeLibrary(it.second);
 #else
         dlclose(it.second);
@@ -32,6 +33,12 @@ EmulatorManager::~EmulatorManager() noexcept
 
 bool EmulatorManager::LoadEmulator(std::string name) noexcept
 {
+#if defined(_WIN32) || defined(_WIN64)
+    const std::string pathSeparator = "\\";
+#else
+    const std::string pathSeparator = "/";
+#endif
+
     // Don't reload the emulator if it's already loaded
     if (loadedEmulators_.find(name) != loadedEmulators_.end()) {
         spdlog::info("Already loaded emulator: {}", name);
@@ -39,20 +46,20 @@ bool EmulatorManager::LoadEmulator(std::string name) noexcept
     }
 
     std::string sharedObjectPath;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
     char buffer[MAX_PATH+1];
 #else
     char buffer[PATH_MAX+1];
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
     if(!GetModuleFileName(NULL, buffer, sizeof(buffer))) {
         spdlog::debug("{}: GetModuleFileName failed", __FUNCTION__, name);
         return false;
     }
     std::string exePath = std::string(buffer);
-    std::string exeDir = exePath.substr(0, exePath.find_last_of(std::filesystem::path::preferred_separator));
-    sharedObjectPath = exeDir + std::filesystem::path::preferred_separator + sharedObjectPath;
+    std::string exeDir = exePath.substr(0, exePath.find_last_of(pathSeparator));
+    sharedObjectPath = std::format("{}{}{}", exeDir, "/", sharedObjectPath);
 #elif __APPLE__
     uint32_t size = sizeof(buffer);
     if (_NSGetExecutablePath(buffer, &size)) {
@@ -60,8 +67,8 @@ bool EmulatorManager::LoadEmulator(std::string name) noexcept
         return false;
     }
     std::string exePath = std::string(buffer);
-    std::string exeDir = exePath.substr(0, exePath.find_last_of(std::filesystem::path::preferred_separator));
-    sharedObjectPath = exeDir + std::filesystem::path::preferred_separator + sharedObjectPath;
+    std::string exeDir = exePath.substr(0, exePath.find_last_of(pathSeparator));
+    sharedObjectPath = exeDir + pathSeparator + sharedObjectPath;
 #else
     ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
     if (len == -1) {
@@ -69,29 +76,31 @@ bool EmulatorManager::LoadEmulator(std::string name) noexcept
     }
     buffer[len] = '\0';
     std::string exePath = std::string(buffer);
-    std::string exeDir = exePath.substr(0, exePath.find_last_of(std::filesystem::path::preferred_separator));
-    sharedObjectPath = exeDir + std::filesystem::path::preferred_separator + sharedObjectPath;
+    std::string exeDir = exePath.substr(0, exePath.find_last_of(pathSeparator));
+    sharedObjectPath = exeDir + pathSeparator + sharedObjectPath;
 #endif
     
-#ifdef _WIN32
-    sharedObjectPath = sharedObjectPath +
-        "systems" +
-        std::filesystem::path::preferred_separator +
-        name + ".dll";
+#if defined(_WIN32) || defined(_WIN64)
+    sharedObjectPath = std::format("{}{}{}{}{}",
+        sharedObjectPath,
+        "systems",
+        pathSeparator,
+        name,
+        ".dll");
 #elif __APPLE__
     sharedObjectPath = sharedObjectPath +
         "systems" +
-        std::filesystem::path::preferred_separator +
+        pathSeparator +
         "lib" + name + ".dylib";
 #else
     sharedObjectPath = sharedObjectPath +
         "systems" +
-        std::filesystem::path::preferred_separator +
+        pathSeparator +
         "lib" + name + ".so";
 #endif
 
     SO_HANDLE handle;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
     handle = LoadLibrary(sharedObjectPath.c_str());
     if (!handle) {
         spdlog::debug("{}: Failed loading library: {}", __FUNCTION__, sharedObjectPath);
@@ -120,7 +129,7 @@ component::CreateSystemFunc EmulatorManager::GetSystem(std::string name) noexcep
     }
     SO_HANDLE handle = it->second;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
     FARPROC symbol = GetProcAddress(handle, symbolName);
 #else
     void* symbol = dlsym(handle, symbolName);

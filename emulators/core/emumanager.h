@@ -6,11 +6,15 @@
 #include <components/system.h>
 #include <debugger/debugger.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#endif
+
 namespace emulator::core {
 
 class EmulatorManager {
 private:
-    #ifdef _WIN32
+    #if defined(_WIN32) || defined(_WIN64)
         using SO_HANDLE = HMODULE;
     #else
         using SO_HANDLE = void*;

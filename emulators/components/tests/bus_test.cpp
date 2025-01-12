@@ -26,7 +26,7 @@ TEST(ComponentBUS, AddMultipleRAM)
 }
 
 // Test adding conflicting RAM addresses to bus
-TEST(ComponentBUS, AddConflictingRAMAddressese)
+TEST(ComponentBUS, AddConflictingRAMAddresses)
 {
     auto bus = emulator::component::Bus();
     auto ram = new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(1024);

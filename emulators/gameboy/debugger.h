@@ -73,12 +73,13 @@ public:
         // TODO: Repeat for all registers
     }
 
-    bool SetRegister(std::string name, std::uint64_t value) noexcept
+    bool SetRegister(std::string name, std::uint64_t _value) noexcept
     {
+        auto value = static_cast<std::uint16_t>(_value & 0xFFFF);
         if (name == "AF" || name == "af") {
             cpu_->SetRegister<emulator::gameboy::CPU::Registers::AF>(value);
         } else if (name == "A" || name == "a") {
-            cpu_->GetRegister<emulator::gameboy::CPU::Registers::A>();
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::A>(value);
         } else {
             return false;
         }

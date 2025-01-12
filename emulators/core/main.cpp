@@ -13,6 +13,7 @@ static int RunEmulator(emulator::core::EmulatorManager* manager, std::string nam
 {
     auto createSystem = manager->GetSystem(name);
     if (!createSystem) {
+        spdlog::error("Failed to get system handle for {}", name);
         return -1;
     }
     auto system = createSystem();

@@ -31,8 +31,8 @@ void DebuggerSocketServer::SetTimeout(float seconds) noexcept
 
     usecs = modf(seconds, &secs);
 
-    timeout_.tv_sec = secs;
-    timeout_.tv_usec = usecs * 1000000; // usecs in second
+    timeout_.tv_sec = static_cast<long>(secs);
+    timeout_.tv_usec = static_cast<long>(usecs * 1000000); // usecs in second
 }
 
 DebuggerSocketClient* DebuggerSocketServer::Accept()
@@ -49,7 +49,12 @@ DebuggerSocketClient* DebuggerSocketServer::Accept()
     FD_SET(server_, &readable);
     FD_SET(server_, &exceptionable);
 
+#if defined(_WIN32) || defined(_WIN64)
+    // First argument ignore on Windows
+    int activity = select(1, &readable, nullptr, &exceptionable, &timeout_);
+#else
     int activity = select(server_ + 1, &readable, nullptr, &exceptionable, &timeout_);
+#endif
     if (activity < 0) {
         throw std::runtime_error("Select failed");
     }

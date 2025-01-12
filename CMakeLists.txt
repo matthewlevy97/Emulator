@@ -5,8 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 project(Emulator)
 
-option(BUILD_TESTS "Build all tests" ON)
-option(COMPILE_DEBUGGER "Compile with GDBServer Bindings" ON)
+option(BUILD_TESTS "Build all tests" OFF)
 
 include(FetchContent)
 

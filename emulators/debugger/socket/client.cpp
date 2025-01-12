@@ -28,7 +28,12 @@ bool DebuggerSocketClient::IsReadable() noexcept
     FD_ZERO(&fdset);
     FD_SET(client_, &fdset);
 
+#if defined(_WIN32) || defined(_WIN64)
+    // First argument ignore on Windows
+    if (select(1, &fdset, nullptr, nullptr, &timeout_) < 0) {
+#else
     if (select(client_ + 1, &fdset, nullptr, nullptr, &timeout_) < 0) {
+#endif
         return false;
     }
     return FD_ISSET(client_, &fdset);
@@ -44,7 +49,12 @@ bool DebuggerSocketClient::IsWritable() noexcept
     FD_ZERO(&fdset);
     FD_SET(client_, &fdset);
 
+#if defined(_WIN32) || defined(_WIN64)
+    // First argument ignore on Windows
+    if (select(1, nullptr, &fdset, nullptr, &timeout_) < 0) {
+#else
     if (select(client_ + 1, nullptr, &fdset, nullptr, &timeout_) < 0) {
+#endif
         return false;
     }
     return FD_ISSET(client_, &fdset);
@@ -62,11 +72,11 @@ int DebuggerSocketClient::ReadAll(std::uint8_t** data) noexcept
     }
 
     int bufLen = 0;
-    std::size_t bufCap = 4096;
+    int bufCap = 4096;
     std::uint8_t *buf = new std::uint8_t[bufCap+1];
 
     while (IsReadable()) {
-        auto n = recv(client_, buf, bufCap, MSG_DONTWAIT);
+        auto n = recv(client_, reinterpret_cast<char*>(buf), bufCap, 0);
         if (n < 0) {
             delete[] buf;
             return -1;
@@ -116,9 +126,9 @@ int DebuggerSocketClient::Write(const std::uint8_t* data, std::size_t len) noexc
         spdlog::trace("GDBStubClient -> {}", msg);
     }
 
-    std::size_t offset = 0;
+    int offset = 0;
     do {
-        auto n = send(client_, data + offset, len - offset, 0);
+        auto n = send(client_, reinterpret_cast<const char*>(data) + offset, static_cast<int>(len) - offset, 0);
         if (n < 0) {
             return -1;
         }

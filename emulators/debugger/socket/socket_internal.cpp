@@ -1,5 +1,6 @@
 #include "socket_internal.h"
 
+#include <atomic>
 #include <string>
 
 namespace emulator::debugger::socket::internal {
@@ -58,13 +59,13 @@ SOCKET CreateServerSocket(std::uint16_t port, bool localhost, int listenConns) n
     }
 
     int reuse = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char*)(&reuse), sizeof(reuse)) < 0) {
         freeaddrinfo(res);
         closesocket(sock);
         return INVALID_SOCKET;
     }
 
-    if (bind(sock, res->ai_addr, res->ai_addrlen) < 0) {
+    if (bind(sock, res->ai_addr, static_cast<int>(res->ai_addrlen)) < 0) {
         freeaddrinfo(res);
         closesocket(sock);
         return INVALID_SOCKET;

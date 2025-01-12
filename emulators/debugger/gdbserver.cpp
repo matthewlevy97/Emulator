@@ -1,6 +1,8 @@
 #include "gdbserver.h"
+#include "utils.h"
 
 #include <unordered_map>
+
 #include <spdlog/spdlog.h>
 
 namespace emulator::debugger {
@@ -138,7 +140,7 @@ std::size_t GDBServerConnection::ExtractPacket(GDBPacket& pkt, std::uint8_t* buf
         char(buf[eop+2]),
         '\0'
     };
-    pkt.chksum = std::strtoul(chksumStr, nullptr, 16);
+    pkt.chksum = static_cast<std::uint8_t>(std::strtoul(chksumStr, nullptr, 16) & 0xFF);
     if (chksum != pkt.chksum) {
         pkt.valid = false;
         return 0;
@@ -382,17 +384,20 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt) noexcept
     std::unordered_map<std::string, std::string> kv;
 
     char *dup, *tmp, *token;
-    dup = tmp = strdup(pkt.data.c_str());
+    dup = tmp = new char[pkt.data.size() + 1];
+    memcpy(dup, pkt.data.c_str(), pkt.data.size());
+    dup[pkt.data.size()] = '\0';
 
     while (*tmp != '\0' && *tmp != ':') tmp++;
     if (*tmp == '\0') {
         // No Options
         spdlog::debug("qSupported Packet contains no options");
+        delete[] dup;
         return;
     }
     tmp++; // Move past ':'
 
-    while ((token = strsep(&tmp, ";")) != nullptr) {
+    while ((token = emulator::Strsep(&tmp, ';')) != nullptr) {
         // Get value
         char* valStart = token;
         while (*valStart != '=' && *valStart != '+' && *valStart != '-' && *valStart != '?' && *valStart != '\0') {
@@ -446,6 +451,8 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt) noexcept
 
     // Send response
     SendResponse(response);
+
+    delete[] dup;
 }
 
 void GDBServerConnection::HandleVCont(GDBPacket& pkt) noexcept

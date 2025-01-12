@@ -48,7 +48,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::BC>(),
-                                    cpu->GetRegister<Registers::A>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>()));
         });
         break;
 
@@ -65,7 +65,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x04:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::B>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::B>());
             std::uint8_t value = 1 + reg;
 
             cpu->SetRegister<Registers::B>(value);
@@ -79,7 +79,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x05:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::B>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::B>());
             std::uint8_t value = reg - 1;
 
             cpu->SetRegister<Registers::B>(value);
@@ -93,8 +93,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x09:
         // 8 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::H>();
-            std::uint8_t other = cpu->GetRegister<Registers::B>();
+            auto reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::B>());
             std::uint8_t value = reg + other + (cpu->GetFlag<Flags::C>() ? 1 : 0);
 
             cpu->SetRegister<Registers::H>(value);
@@ -103,8 +103,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHC(reg, other));
         });
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::L>();
-            std::uint8_t other = cpu->GetRegister<Registers::C>();
+            auto reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::C>());
             std::uint8_t value = reg + other;
 
             cpu->SetRegister<Registers::L>(value);
@@ -127,7 +127,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x0C:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::C>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::C>());
             std::uint8_t value = 1 + reg;
 
             cpu->SetRegister<Registers::C>(value);
@@ -141,7 +141,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x0D:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::C>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::C>());
             std::uint8_t value = reg - 1;
 
             cpu->SetRegister<Registers::C>(value);
@@ -157,7 +157,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::DE>(),
-                                    cpu->GetRegister<Registers::A>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>()));
         });
         break;
 
@@ -174,7 +174,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x14:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::D>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::D>());
             std::uint8_t value = 1 + reg;
 
             cpu->SetRegister<Registers::D>(value);
@@ -188,7 +188,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x15:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::D>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::D>());
             std::uint8_t value = reg - 1;
 
             cpu->SetRegister<Registers::D>(value);
@@ -202,8 +202,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x19:
         // 8 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::H>();
-            std::uint8_t other = cpu->GetRegister<Registers::D>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::D>());
             std::uint8_t value = reg + other + (cpu->GetFlag<Flags::C>() ? 1 : 0);
 
             cpu->SetRegister<Registers::H>(value);
@@ -212,8 +212,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHC(reg, other));
         });
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::L>();
-            std::uint8_t other = cpu->GetRegister<Registers::E>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::E>());
             std::uint8_t value = reg + other;
 
             cpu->SetRegister<Registers::L>(value);
@@ -236,7 +236,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x1C:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::E>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::E>());
             std::uint8_t value = 1 + reg;
 
             cpu->SetRegister<Registers::E>(value);
@@ -250,7 +250,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x1D:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::E>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::E>());
             std::uint8_t value = reg - 1;
 
             cpu->SetRegister<Registers::E>(value);
@@ -266,7 +266,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::A>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>()));
             cpu->AddRegister<Registers::HL>(1);
         });
         break;
@@ -284,7 +284,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x24:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::H>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
             std::uint8_t value = reg + 1;
 
             cpu->SetRegister<Registers::H>(value);
@@ -298,7 +298,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x25:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::H>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
             std::uint8_t value = reg - 1;
 
             cpu->SetRegister<Registers::H>(value);
@@ -312,8 +312,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x29:
         // 8 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::H>();
-            std::uint8_t other = cpu->GetRegister<Registers::H>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
             std::uint8_t value = reg + other + (cpu->GetFlag<Flags::C>() ? 1 : 0);
 
             cpu->SetRegister<Registers::H>(value);
@@ -322,8 +322,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHC(reg, other));
         });
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::L>();
-            std::uint8_t other = cpu->GetRegister<Registers::L>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
             std::uint8_t value = reg + other;
 
             cpu->SetRegister<Registers::L>(value);
@@ -346,7 +346,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x2C:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::L>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
             std::uint8_t value = 1 + reg;
 
             cpu->SetRegister<Registers::L>(value);
@@ -360,7 +360,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x2D:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::L>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
             std::uint8_t value = reg - 1;
 
             cpu->SetRegister<Registers::L>(value);
@@ -376,7 +376,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::A>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>()));
             cpu->SubRegister<Registers::HL>(1);
         });
         break;
@@ -394,8 +394,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x39:
         // 8 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::H>();
-            std::uint8_t other = cpu->GetRegister<Registers::SP>() >> 8;
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::SP>() >> 8);
             std::uint8_t value = reg + other + (cpu->GetFlag<Flags::C>() ? 1 : 0);
 
             cpu->SetRegister<Registers::H>(value);
@@ -404,8 +404,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHC(reg, other));
         });
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::L>();
-            std::uint8_t other = cpu->GetRegister<Registers::SP>() & 0xFF;
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::SP>() & 0xFF);
             std::uint8_t value = reg + other;
 
             cpu->SetRegister<Registers::L>(value);
@@ -428,7 +428,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x3C:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::A>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = 1 + reg;
 
             cpu->SetRegister<Registers::A>(value);
@@ -442,7 +442,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x3D:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t reg = cpu->GetRegister<Registers::A>();
+            std::uint8_t reg = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = reg - 1;
 
             cpu->SetRegister<Registers::A>(value);
@@ -877,7 +877,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::B>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::B>()));
         });
         PushMicrocode(CycleNoOp);
         break;
@@ -887,7 +887,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::C>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::C>()));
         });
         PushMicrocode(CycleNoOp);
         break;
@@ -897,7 +897,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::D>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::D>()));
         });
         PushMicrocode(CycleNoOp);
         break;
@@ -907,7 +907,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::E>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::E>()));
         });
         PushMicrocode(CycleNoOp);
         break;
@@ -917,7 +917,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::H>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>()));
         });
         PushMicrocode(CycleNoOp);
         break;
@@ -927,7 +927,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::L>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>()));
         });
         PushMicrocode(CycleNoOp);
         break;
@@ -937,7 +937,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(),
-                                    cpu->GetRegister<Registers::A>());
+                                    static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>()));
         });
         PushMicrocode(CycleNoOp);
         break;
@@ -1016,8 +1016,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x80:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
-            std::uint8_t other = cpu->GetRegister<Registers::B>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::B>());
             std::uint8_t value = a + other;
 
             cpu->SetRegister<Registers::A>(value);
@@ -1032,8 +1032,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x81:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
-            std::uint8_t other = cpu->GetRegister<Registers::C>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::C>());
             std::uint8_t value = a + other;
 
             cpu->SetRegister<Registers::A>(value);
@@ -1048,8 +1048,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x82:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
-            std::uint8_t other = cpu->GetRegister<Registers::D>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::D>());
             std::uint8_t value = a + other;
 
             cpu->SetRegister<Registers::A>(value);
@@ -1064,8 +1064,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x83:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
-            std::uint8_t other = cpu->GetRegister<Registers::E>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::E>());
             std::uint8_t value = a + other;
 
             cpu->SetRegister<Registers::A>(value);
@@ -1080,8 +1080,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x84:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
-            std::uint8_t other = cpu->GetRegister<Registers::H>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
             std::uint8_t value = a + other;
 
             cpu->SetRegister<Registers::A>(value);
@@ -1096,8 +1096,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x85:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
-            std::uint8_t other = cpu->GetRegister<Registers::L>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
             std::uint8_t value = a + other;
 
             cpu->SetRegister<Registers::A>(value);
@@ -1113,7 +1113,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         // 8 Cycles
         scratch = new std::uint8_t;
         PushMicrocode([scratch](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             auto tmp = static_cast<std::uint8_t*>(scratch);
             std::uint8_t value = a + *tmp;
 
@@ -1135,8 +1135,8 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0x87:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
-            std::uint8_t other = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = a + other;
 
             cpu->SetRegister<Registers::A>(value);
@@ -1151,7 +1151,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0xA8:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = a ^ cpu->GetRegister<Registers::B>();
 
             cpu->SetRegister<Registers::A>(value);
@@ -1166,7 +1166,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0xA9:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = a ^ cpu->GetRegister<Registers::C>();
 
             cpu->SetRegister<Registers::A>(value);
@@ -1181,7 +1181,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0xAA:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = a ^ cpu->GetRegister<Registers::D>();
 
             cpu->SetRegister<Registers::A>(value);
@@ -1196,7 +1196,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0xAB:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = a ^ cpu->GetRegister<Registers::E>();
 
             cpu->SetRegister<Registers::A>(value);
@@ -1211,7 +1211,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0xAC:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = a ^ cpu->GetRegister<Registers::H>();
 
             cpu->SetRegister<Registers::A>(value);
@@ -1226,7 +1226,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
     case 0xAD:
         // 4 Cycles
         PushMicrocode([](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             std::uint8_t value = a ^ cpu->GetRegister<Registers::L>();
 
             cpu->SetRegister<Registers::A>(value);
@@ -1242,7 +1242,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         // 8 Cycles
         scratch = new std::uint8_t;
         PushMicrocode([scratch](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
 
             auto tmp = static_cast<std::uint8_t*>(scratch);
             std::uint8_t value = a ^ *tmp;
@@ -1311,12 +1311,12 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode(CycleNoOp);
         PushMicrocode([scratch](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::C>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::C>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
         });
         PushMicrocode([scratch](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::B>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::B>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
             cpu->SubRegister<Registers::SP>(1);
         });
@@ -1363,12 +1363,12 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode(CycleNoOp);
         PushMicrocode([scratch](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::E>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::E>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
         });
         PushMicrocode([scratch](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::D>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::D>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
             cpu->SubRegister<Registers::SP>(1);
         });
@@ -1415,12 +1415,12 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode(CycleNoOp);
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::L>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
         });
         PushMicrocode([](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::H>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
             cpu->SubRegister<Registers::SP>(1);
         });
@@ -1435,7 +1435,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
 
         // 8 Cycles
         PushMicrocode([scratch](CPU* cpu) {
-            std::uint8_t a = cpu->GetRegister<Registers::A>();
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
 
             auto tmp = static_cast<std::uint8_t*>(scratch);
             std::uint8_t value = a ^ *tmp;
@@ -1492,12 +1492,12 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode(CycleNoOp);
         PushMicrocode([scratch](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::F>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::F>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
         });
         PushMicrocode([scratch](CPU* cpu) {
             auto bus = cpu->bus_;
-            auto val = cpu->GetRegister<Registers::A>();
+            auto val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::SP>(), val);
             cpu->SubRegister<Registers::SP>(1);
         });

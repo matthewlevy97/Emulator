@@ -87,6 +87,7 @@ struct RegisterInfo {
         case RegisterInfoGenericType::ARG8:
             return "arg8";
         }
+        return "";
     }
 
     std::string Encoding() const
@@ -100,6 +101,7 @@ struct RegisterInfo {
         case RegisterInfoEncoding::FLOAT:
             return "ieee754";
         }
+        return "";
     }
 
     std::string Format() const
@@ -115,6 +117,7 @@ struct RegisterInfo {
         case RegisterInfoFormat::HEX:
             return "hex";
         }
+        return "";
     }
 
     std::string ToString() const

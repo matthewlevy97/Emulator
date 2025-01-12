@@ -15,7 +15,7 @@ private:
     bool InMemoryRange(std::size_t address, std::size_t length) noexcept
     {
         for (const auto& [base, bound] : addressRanges_) {
-            if (base <= address && bound > address + length) {
+            if (base <= address && bound >= address + length) {
                 return true;
             }
         }

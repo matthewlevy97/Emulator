@@ -6,6 +6,4 @@ target_sources(emulator
 
 LinkCoreEmulatorDeps(emulator)
 
-if(COMPILE_DEBUGGER)
-    target_link_libraries(emulator PRIVATE debugger)
-endif()
+target_link_libraries(emulator PRIVATE debugger)
