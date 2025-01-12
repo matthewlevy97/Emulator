@@ -5,10 +5,6 @@ function(CreateNewEmulatorTarget target_name)
         message(STATUS "Rebuild without BUILD_TESTS enabled to actually run")
     else()
         add_library(${target_name} SHARED "")
-
-        if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-            set_target_properties(${target_name} PROPERTIES COMPILE_FLAGS "-fPIC")
-        endif()
     endif()
 
     target_link_libraries(${target_name}
