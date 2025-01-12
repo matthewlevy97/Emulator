@@ -30,7 +30,12 @@ static int RunEmulator(emulator::core::EmulatorManager* manager, std::string nam
     }
 
     spdlog::info("Starting emulator: {}", system->Name());
-    system->Run();
+    try {
+        system->Run();
+    } catch(const std::exception &e) {
+        spdlog::critical("EXCEPTION: {}", e.what());
+        system->LogStacktrace();
+    }
 
     return 0;
 }

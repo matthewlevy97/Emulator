@@ -252,6 +252,8 @@ public:
 
     void PowerOn() override;
     void PowerOff() override;
+
+    void LogStacktrace() noexcept override;
 };
 
 }; // namespace emulator::gameboy

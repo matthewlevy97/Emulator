@@ -55,6 +55,8 @@ public:
     void PowerOn();
     void PowerOff();
 
+    void LogStacktrace() noexcept;
+
     template <typename T>
     T Read(std::size_t address) {
         static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>,

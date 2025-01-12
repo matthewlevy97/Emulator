@@ -48,6 +48,9 @@ public:
         bus_ = nullptr;
     }
 
+    virtual void LogStacktrace() noexcept
+    {}
+
     //
     // Read and Write Interfaces
     //

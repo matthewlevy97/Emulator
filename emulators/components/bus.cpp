@@ -88,15 +88,24 @@ void Bus::ReceiveTick()
     }
 }
 
-void Bus::PowerOn() {
+void Bus::PowerOn()
+{
     for (auto component : components_) {
         component->PowerOn();
     }
 }
 
-void Bus::PowerOff() {
+void Bus::PowerOff()
+{
     for (auto component : components_) {
         component->PowerOff();
+    }
+}
+
+void Bus::LogStacktrace() noexcept
+{
+    for (auto component : components_) {
+        component->LogStacktrace();
     }
 }
 

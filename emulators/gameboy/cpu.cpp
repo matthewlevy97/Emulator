@@ -1,5 +1,7 @@
 #include "cpu.h"
 
+#include <spdlog/spdlog.h>
+
 namespace emulator::gameboy {
 
 CPU::CPU() : microcodeStackLength_(0), microcode_{}, registers_{}
@@ -53,6 +55,13 @@ void CPU::PushMicrocode(MicroCode code)
     }
 
     microcode_[microcodeStackLength_++] = code;
+}
+
+void CPU::LogStacktrace() noexcept
+{
+    spdlog::debug("[CPU] AF: {:04X}   BC: {:04X}", GetRegister<Registers::AF>(), GetRegister<Registers::BC>());
+    spdlog::debug("[CPU] DE: {:04X}   HL: {:04X}", GetRegister<Registers::DE>(), GetRegister<Registers::HL>());
+    spdlog::debug("[CPU] SP: {:04X}   PC: {:04X}", GetRegister<Registers::SP>(), GetRegister<Registers::PC>());
 }
 
 }; // namespace emulator::gameboy

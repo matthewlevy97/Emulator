@@ -1071,4 +1071,38 @@ TEST_F(GameBoyCPUDecode, DecodeLD_FromHLAddressDec)
 
 #undef DecodeLoadAddr
 
+#define DecodeLoadFromImediate(opcode, name, targetReg)             \
+    TEST_F(GameBoyCPUDecode, DecodeLD##name##_FromImmediate)        \
+    {                                                               \
+        std::vector<std::uint8_t> opcodes = {opcode, 0xFE, 0xCA};   \
+        LoadData(opcodes);                                          \
+                                                                    \
+        CPU state;                                                  \
+        SaveCPUState(state);                                        \
+                                                                    \
+        cpu_->ReceiveTick();                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                   \
+        ValidateCPUState(state);                                    \
+                                                                    \
+        cpu_->ReceiveTick();                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                   \
+        ValidateCPUState(state);                                    \
+                                                                    \
+        cpu_->ReceiveTick();                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                   \
+        state.SetRegister<targetReg>(0xCAFE);                       \
+        state.SetFlag<CPU::Flags::Z>(false);                        \
+        state.SetFlag<CPU::Flags::N>(false);                        \
+        state.SetFlag<CPU::Flags::H>(false);                        \
+        state.SetFlag<CPU::Flags::C>(false);                        \
+        ValidateCPUState(state);                                    \
+    }
+
+DecodeLoadFromImediate(0x01, BC, CPU::Registers::BC)
+DecodeLoadFromImediate(0x11, DE, CPU::Registers::DE)
+DecodeLoadFromImediate(0x21, HL, CPU::Registers::HL)
+DecodeLoadFromImediate(0x31, SP, CPU::Registers::SP)
+
+#undef DecodeLoadFromImediate
+
 #pragma endregion DecodeLD

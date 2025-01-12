@@ -18,7 +18,6 @@ public:
     {
         onStepCallback_ = func;
     }
-
 };
 
 }; // namespace emulator::component

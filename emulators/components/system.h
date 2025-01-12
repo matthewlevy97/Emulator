@@ -80,6 +80,11 @@ public:
     {
         return debugger_;
     }
+
+    void LogStacktrace() noexcept
+    {
+        bus_.LogStacktrace();
+    }
 };
 
 using CreateSystemFunc = System* (*)();
