@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "exceptions/InvalidAddress.h"
 
 namespace emulator::component {
