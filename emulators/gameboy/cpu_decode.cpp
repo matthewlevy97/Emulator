@@ -240,6 +240,39 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    // JR r8
+    case 0x18:
+        scratch = new std::uint16_t;
+        // Need to actually do parsing
+        PushMicrocode([scratch](CPU* cpu) {
+            // PC = WZ
+            auto WZ = static_cast<std::uint16_t*>(scratch);
+            cpu->SetRegister<CPU::Registers::PC>(*WZ);
+            delete WZ;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto tmp = static_cast<std::uint16_t*>(scratch);
+
+            std::uint8_t Z = *tmp & 0xFF;
+            bool sign = (Z >> 7) & 0x1;
+
+            std::uint8_t WZlower = Z + (cpu->GetRegister<CPU::Registers::PC>() & 0xFF);
+            bool carry = WZlower < Z;
+            int adj = (carry && !sign) ? 1 : ((!carry && sign) ? -1 : 0);
+            std::uint8_t WZupper = (cpu->GetRegister<CPU::Registers::PC>() >> 8) + adj;
+
+            *tmp = (std::uint16_t(WZupper) << 8) | WZlower;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto Z = static_cast<std::uint16_t*>(scratch);
+
+            // Read r8
+            auto bus = cpu->bus_;
+            *Z = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+
     // ADD HL, DE
     case 0x19:
         // 8 Cycles
@@ -299,6 +332,47 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::Z>(value == 0);
             cpu->SetFlag<Flags::N>(true);
             cpu->SetFlag<Flags::H>(IsHCSub(reg, 1));
+        });
+        break;
+    
+    // JR NZ, r8
+    case 0x20:
+        scratch = new std::uint16_t;
+        PushMicrocode([scratch](CPU* cpu) {
+            auto Z = static_cast<std::uint16_t*>(scratch);
+
+            // Read r8
+            auto bus = cpu->bus_;
+            *Z = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+
+            if (!cpu->GetFlag<CPU::Flags::Z>()) {
+                // Need to actually do parsing
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // PC = WZ
+                    auto WZ = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<CPU::Registers::PC>(*WZ);
+                    delete WZ;
+                });
+
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    auto tmp = static_cast<std::uint16_t*>(scratch);
+
+                    std::uint8_t Z = *tmp & 0xFF;
+                    bool sign = (Z >> 7) & 0x1;
+
+                    std::uint8_t WZlower = Z + (cpu->GetRegister<CPU::Registers::PC>() & 0xFF);
+                    bool carry = WZlower < Z;
+                    int adj = (carry && !sign) ? 1 : ((!carry && sign) ? -1 : 0);
+                    std::uint8_t WZupper = (cpu->GetRegister<CPU::Registers::PC>() >> 8) + adj;
+
+                    *tmp = (std::uint16_t(WZupper) << 8) | WZlower;
+                });
+            } else {
+                // No Jump
+                cpu->PushMicrocode(CycleNoOp);
+                delete Z;
+            }
         });
         break;
     
@@ -368,6 +442,47 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::Z>(value == 0);
             cpu->SetFlag<Flags::N>(true);
             cpu->SetFlag<Flags::H>(IsHCSub(reg, 1));
+        });
+        break;
+
+    // JR Z, r8
+    case 0x28:
+        scratch = new std::uint16_t;
+        PushMicrocode([scratch](CPU* cpu) {
+            auto Z = static_cast<std::uint16_t*>(scratch);
+
+            // Read r8
+            auto bus = cpu->bus_;
+            *Z = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+
+            if (cpu->GetFlag<CPU::Flags::Z>()) {
+                // Need to actually do parsing
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // PC = WZ
+                    auto WZ = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<CPU::Registers::PC>(*WZ);
+                    delete WZ;
+                });
+
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    auto tmp = static_cast<std::uint16_t*>(scratch);
+
+                    std::uint8_t Z = *tmp & 0xFF;
+                    bool sign = (Z >> 7) & 0x1;
+
+                    std::uint8_t WZlower = Z + (cpu->GetRegister<CPU::Registers::PC>() & 0xFF);
+                    bool carry = WZlower < Z;
+                    int adj = (carry && !sign) ? 1 : ((!carry && sign) ? -1 : 0);
+                    std::uint8_t WZupper = (cpu->GetRegister<CPU::Registers::PC>() >> 8) + adj;
+
+                    *tmp = (std::uint16_t(WZupper) << 8) | WZlower;
+                });
+            } else {
+                // No Jump
+                cpu->PushMicrocode(CycleNoOp);
+                delete Z;
+            }
         });
         break;
     
@@ -451,6 +566,47 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    // JR NC, r8
+    case 0x30:
+        scratch = new std::uint16_t;
+        PushMicrocode([scratch](CPU* cpu) {
+            auto Z = static_cast<std::uint16_t*>(scratch);
+
+            // Read r8
+            auto bus = cpu->bus_;
+            *Z = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+
+            if (!cpu->GetFlag<CPU::Flags::C>()) {
+                // Need to actually do parsing
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // PC = WZ
+                    auto WZ = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<CPU::Registers::PC>(*WZ);
+                    delete WZ;
+                });
+
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    auto tmp = static_cast<std::uint16_t*>(scratch);
+
+                    std::uint8_t Z = *tmp & 0xFF;
+                    bool sign = (Z >> 7) & 0x1;
+
+                    std::uint8_t WZlower = Z + (cpu->GetRegister<CPU::Registers::PC>() & 0xFF);
+                    bool carry = WZlower < Z;
+                    int adj = (carry && !sign) ? 1 : ((!carry && sign) ? -1 : 0);
+                    std::uint8_t WZupper = (cpu->GetRegister<CPU::Registers::PC>() >> 8) + adj;
+
+                    *tmp = (std::uint16_t(WZupper) << 8) | WZlower;
+                });
+            } else {
+                // No Jump
+                cpu->PushMicrocode(CycleNoOp);
+                delete Z;
+            }
+        });
+        break;
+
     // LD SP, d16
     case 0x31:
         // 12 Cycles
@@ -492,6 +648,47 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode(CycleNoOp);
         break;
     
+    // JR C, r8
+    case 0x38:
+        scratch = new std::uint16_t;
+        PushMicrocode([scratch](CPU* cpu) {
+            auto Z = static_cast<std::uint16_t*>(scratch);
+
+            // Read r8
+            auto bus = cpu->bus_;
+            *Z = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+
+            if (cpu->GetFlag<CPU::Flags::C>()) {
+                // Need to actually do parsing
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // PC = WZ
+                    auto WZ = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<CPU::Registers::PC>(*WZ);
+                    delete WZ;
+                });
+
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    auto tmp = static_cast<std::uint16_t*>(scratch);
+
+                    std::uint8_t Z = *tmp & 0xFF;
+                    bool sign = (Z >> 7) & 0x1;
+
+                    std::uint8_t WZlower = Z + (cpu->GetRegister<CPU::Registers::PC>() & 0xFF);
+                    bool carry = WZlower < Z;
+                    int adj = (carry && !sign) ? 1 : ((!carry && sign) ? -1 : 0);
+                    std::uint8_t WZupper = (cpu->GetRegister<CPU::Registers::PC>() >> 8) + adj;
+
+                    *tmp = (std::uint16_t(WZupper) << 8) | WZlower;
+                });
+            } else {
+                // No Jump
+                cpu->PushMicrocode(CycleNoOp);
+                delete Z;
+            }
+        });
+        break;
+
     // ADD HL, SP
     case 0x39:
         // 8 Cycles
@@ -1635,7 +1832,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         break;
 
     default:
-        spdlog::critical("Unknown Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>());
+        spdlog::critical("Unknown Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>()-1);
         throw std::runtime_error("Unknown opcode");
     }
 }
@@ -1706,7 +1903,7 @@ void CPU::DecodeCBOpcode()
         }
         break;
     default:
-        spdlog::critical("Unknown CB Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>());
+        spdlog::critical("Unknown CB Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>()-1);
         throw std::runtime_error("Unknown opcode");
     }
 }

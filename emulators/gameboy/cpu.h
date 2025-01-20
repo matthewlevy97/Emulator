@@ -247,10 +247,7 @@ private:
     {
         return [bit](CPU* cpu) {
             auto val = cpu->GetRegister<reg>();
-
-            auto z = (val >> bit) & 0x1;
-
-            cpu->SetFlag<Flags::Z>(z);
+            cpu->SetFlag<Flags::Z>(!((val >> bit) & 0x1));
             cpu->SetFlag<Flags::N>(0);
             cpu->SetFlag<Flags::H>(1);
         };

@@ -85,6 +85,114 @@ TEST_F(GameBoyCPUDecode, DecodeNOOP)
     ValidateCPUState(state);
 }
 
+#pragma region DecodeJump
+
+#define DecodeJumpConditional(opcode, name, flag, flagValue)    \
+    TEST_F(GameBoyCPUDecode, Decode##name##_DoJumpForward)      \
+    {                                                           \
+        std::vector<std::uint8_t> opcodes = {opcode, 0x5};      \
+        LoadData(opcodes);                                      \
+                                                                \
+        cpu_->SetFlag<flag>(flagValue);                         \
+                                                                \
+        CPU state;                                              \
+        SaveCPUState(state);                                    \
+                                                                \
+        /* Get r8 and increment PC */                           \
+        cpu_->ReceiveTick();                                    \
+        state.AddRegister<CPU::Registers::PC>(1);               \
+        ValidateCPUState(state);                                \
+                                                                \
+        /* Calculate Jump */                                    \
+        cpu_->ReceiveTick();                                    \
+        ValidateCPUState(state);                                \
+                                                                \
+        /* Validate Jump */                                     \
+        cpu_->ReceiveTick();                                    \
+        state.AddRegister<CPU::Registers::PC>(0x5);             \
+        /* Fetch Next */                                        \
+        state.AddRegister<CPU::Registers::PC>(1);               \
+        ValidateCPUState(state);                                \
+    }                                                           \
+                                                                \
+    TEST_F(GameBoyCPUDecode, Decode##name##_DoJumpBackward)     \
+    {                                                           \
+        static constexpr std::uint8_t NOP = 0x00;               \
+        /* 0xFB == -5 */                                        \
+        std::vector<std::uint8_t> opcodes = {                   \
+            NOP, NOP, NOP, NOP, NOP, NOP,                       \
+            opcode, 0xFB};                                      \
+        LoadData(opcodes);                                      \
+                                                                \
+        cpu_->SetFlag<flag>(flagValue);                         \
+                                                                \
+        CPU state;                                              \
+        SaveCPUState(state);                                    \
+                                                                \
+        /* Move past NOP */                                     \
+        for(int i = 0; i < 6; i++) {                            \
+            cpu_->ReceiveTick();                                \
+            state.AddRegister<CPU::Registers::PC>(1);           \
+            ValidateCPUState(state);                            \
+        };                                                      \
+                                                                \
+        /* Get r8 and increment PC */                           \
+        cpu_->ReceiveTick();                                    \
+        state.AddRegister<CPU::Registers::PC>(1);               \
+        ValidateCPUState(state);                                \
+                                                                \
+        /* Calculate Jump */                                    \
+        cpu_->ReceiveTick();                                    \
+        ValidateCPUState(state);                                \
+                                                                \
+        /* Validate Jump */                                     \
+        cpu_->ReceiveTick();                                    \
+        state.SubRegister<CPU::Registers::PC>(0x5);             \
+        /* Fetch Next */                                        \
+        state.AddRegister<CPU::Registers::PC>(1);               \
+        ValidateCPUState(state);                                \
+    }
+
+#define DecodeNoJumpConditional(opcode, name, flag, flagValue)  \
+    TEST_F(GameBoyCPUDecode, Decode##name##_NoJump)             \
+    {                                                           \
+        std::vector<std::uint8_t> opcodes = {opcode, 0x5};      \
+        LoadData(opcodes);                                      \
+                                                                \
+        cpu_->SetFlag<flag>(!flagValue);                        \
+                                                                \
+        CPU state;                                              \
+        SaveCPUState(state);                                    \
+                                                                \
+        /* Get r8 and increment PC */                           \
+        cpu_->ReceiveTick();                                    \
+        state.AddRegister<CPU::Registers::PC>(1);               \
+        ValidateCPUState(state);                                \
+                                                                \
+        /* Determine no jump */                                 \
+        cpu_->ReceiveTick();                                    \
+        state.AddRegister<CPU::Registers::PC>(1);               \
+        ValidateCPUState(state);                                \
+    }
+
+// Flags don't matter for JR r8
+DecodeJumpConditional(0x18, JR, CPU::Flags::Z, false)
+
+DecodeJumpConditional(0x20, JR_NZ, CPU::Flags::Z, false)
+DecodeNoJumpConditional(0x20, JR_NZ, CPU::Flags::Z, false)
+DecodeJumpConditional(0x28, JR_Z, CPU::Flags::Z, true)
+DecodeNoJumpConditional(0x28, JR_Z, CPU::Flags::Z, true)
+
+DecodeJumpConditional(0x30, JR_NC, CPU::Flags::C, false)
+DecodeNoJumpConditional(0x30, JR_NC, CPU::Flags::C, false)
+DecodeJumpConditional(0x38, JR_C, CPU::Flags::C, true)
+DecodeNoJumpConditional(0x38, JR_C, CPU::Flags::C, true)
+
+#undef DecodeJumpConditional
+#undef DecodeNoJumpConditional
+
+#pragma endregion DecodeJump
+
 #pragma region DecodeIncDec16Cycle
 #define DecodeIncDec8Cycle(name, opcode, targetReg, val)    \
     TEST_F(GameBoyCPUDecode, Decode##name)                  \
@@ -1156,7 +1264,7 @@ DecodeLoadFromImediate(0x31, SP, CPU::Registers::SP)
         /* Process CB opcode */                             \
         cpu_->ReceiveTick();                                \
         state.AddRegister<CPU::Registers::PC>(1);           \
-        state.SetFlag<CPU::Flags::Z>(true);                 \
+        state.SetFlag<CPU::Flags::Z>(false);                \
         state.SetFlag<CPU::Flags::N>(false);                \
         state.SetFlag<CPU::Flags::H>(true);                 \
         ValidateCPUState(state);                            \
@@ -1180,7 +1288,7 @@ DecodeLoadFromImediate(0x31, SP, CPU::Registers::SP)
         /* Process CB opcode */                             \
         cpu_->ReceiveTick();                                \
         state.AddRegister<CPU::Registers::PC>(1);           \
-        state.SetFlag<CPU::Flags::Z>(false);                \
+        state.SetFlag<CPU::Flags::Z>(true);                 \
         state.SetFlag<CPU::Flags::N>(false);                \
         state.SetFlag<CPU::Flags::H>(true);                 \
         ValidateCPUState(state);                            \
