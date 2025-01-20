@@ -396,6 +396,24 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
 
+    // LD A, (HL+)
+    case 0x2A:
+        scratch = new std::uint8_t;
+
+        // 8 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto tmp = static_cast<std::uint8_t*>(scratch);
+            cpu->SetRegister<Registers::A>(*tmp);
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
+
+            cpu->AddRegister<Registers::HL>(1);
+        });
+        break;
+
     // DEC HL
     case 0x2B:
         // 8 Cycles
@@ -496,6 +514,24 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::N>(false);
             cpu->SetFlag<Flags::C>(reg > value);
             cpu->SetFlag<Flags::H>(IsHC(reg, other));
+        });
+        break;
+
+    // LD A, (HL-)
+    case 0x3A:
+        scratch = new std::uint8_t;
+
+        // 8 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto tmp = static_cast<std::uint8_t*>(scratch);
+            cpu->SetRegister<Registers::A>(*tmp);
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
+
+            cpu->SubRegister<Registers::HL>(1);
         });
         break;
 
@@ -1409,6 +1445,14 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    case 0xCB:
+        DecodeCBOpcode();
+        PushMicrocode([](CPU* cpu) {
+            // Increment past the CB instruction
+            cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+
     // POP DE
     case 0xD1:
         scratch = new std::uint16_t;
@@ -1592,6 +1636,77 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
 
     default:
         spdlog::critical("Unknown Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>());
+        throw std::runtime_error("Unknown opcode");
+    }
+}
+
+void CPU::DecodeCBOpcode()
+{
+    void *scratch = nullptr;
+    int bit = 0;
+
+    auto pc = GetRegister<Registers::PC>();
+    auto opcode = bus_->Read<std::uint8_t>(pc);
+
+    switch(opcode & 0xF0)
+    {
+    case 0x40:
+    case 0x50:
+    case 0x60:
+    case 0x70:
+        bit = (opcode - 0x40) / 0x8;
+        switch((opcode - 0x40) & 0x7)
+        {
+        case 0x0:
+            // B
+            PushMicrocode(GenerateBit8<Registers::B>(bit));
+            break;
+        case 0x1:
+            // C
+            PushMicrocode(GenerateBit8<Registers::C>(bit));
+            break;
+        case 0x2:
+            // D
+            PushMicrocode(GenerateBit8<Registers::D>(bit));
+            break;
+        case 0x3:
+            // E
+            PushMicrocode(GenerateBit8<Registers::E>(bit));
+            break;
+        case 0x4:
+            // H
+            PushMicrocode(GenerateBit8<Registers::H>(bit));
+            break;
+        case 0x5:
+            // L
+            PushMicrocode(GenerateBit8<Registers::L>(bit));
+            break;
+        case 0x6:
+            scratch = new std::uint8_t;
+
+            // (HL)
+            PushMicrocode([scratch, bit](CPU* cpu) {
+                auto tmp = static_cast<std::uint8_t*>(scratch);
+                auto z = (*tmp >> bit) & 0x1;
+                delete tmp;
+
+                cpu->SetFlag<Flags::Z>(z);
+                cpu->SetFlag<Flags::N>(0);
+                cpu->SetFlag<Flags::H>(1);
+            });
+            PushMicrocode([scratch](CPU* cpu) {
+                auto bus = cpu->bus_;
+                *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
+            });
+            break;
+        case 0x7:
+            // A
+            PushMicrocode(GenerateBit8<Registers::A>(bit));
+            break;
+        }
+        break;
+    default:
+        spdlog::critical("Unknown CB Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>());
         throw std::runtime_error("Unknown opcode");
     }
 }

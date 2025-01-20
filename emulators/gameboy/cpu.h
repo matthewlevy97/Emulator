@@ -10,16 +10,6 @@
 namespace emulator::gameboy {
 
 class CPU : public emulator::component::CPU {
-private:
-    using MicroCode = std::function<void(CPU*)>;
-    std::array<MicroCode, 32> microcode_;
-    size_t microcodeStackLength_;
-
-    std::array<std::uint16_t, 6> registers_;
-
-    void PushMicrocode(MicroCode code);
-    void DecodeOpcode(std::uint8_t opcode);
-
 public:
     /*
     Registers:
@@ -241,6 +231,32 @@ public:
             registers_[0] &= ~mask;
         }
     }
+
+private:
+    using MicroCode = std::function<void(CPU*)>;
+    std::array<MicroCode, 32> microcode_;
+    size_t microcodeStackLength_;
+
+    std::array<std::uint16_t, 6> registers_;
+
+    void PushMicrocode(MicroCode code);
+    void DecodeOpcode(std::uint8_t opcode);
+
+    template <Registers reg>
+    MicroCode GenerateBit8(int bit)
+    {
+        return [bit](CPU* cpu) {
+            auto val = cpu->GetRegister<reg>();
+
+            auto z = (val >> bit) & 0x1;
+
+            cpu->SetFlag<Flags::Z>(z);
+            cpu->SetFlag<Flags::N>(0);
+            cpu->SetFlag<Flags::H>(1);
+        };
+    }
+
+    void DecodeCBOpcode();
 
 public:
     CPU();

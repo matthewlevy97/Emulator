@@ -1041,6 +1041,34 @@ TEST_F(GameBoyCPUDecode, DecodeLD_ToHLAddressDec)
     ValidateCPUState(state);
 }
 
+TEST_F(GameBoyCPUDecode, DecodeLD_FromHLAddressAsc)
+{
+    std::vector<std::uint8_t> opcodes = {0x2A};
+    LoadData(opcodes);
+
+    auto mem = cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2; 
+    cpu_->SetRegister<CPU::Registers::HL>(mem);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0xDE);
+
+    cpu_->SetRegister<CPU::Registers::A>(0xCA);
+
+    CPU state; 
+    SaveCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::HL>(1);
+    ValidateCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0xDE);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
 TEST_F(GameBoyCPUDecode, DecodeLD_FromHLAddressDec)
 {
     std::vector<std::uint8_t> opcodes = {0x3A};
@@ -1106,3 +1134,152 @@ DecodeLoadFromImediate(0x31, SP, CPU::Registers::SP)
 #undef DecodeLoadFromImediate
 
 #pragma endregion DecodeLD
+
+#pragma region CB_Bit
+
+#define CB_DecodeBit(opcode, name, targetReg, bit)          \
+    TEST_F(GameBoyCPUDecode, CB_BIT_##bit##_##name##_SET)   \
+    {                                                       \
+        std::vector<std::uint8_t> opcodes = {0xCB, opcode}; \
+        LoadData(opcodes);                                  \
+                                                            \
+        cpu_->SetRegister<targetReg>(1 << (bit));           \
+                                                            \
+        CPU state;                                          \
+        SaveCPUState(state);                                \
+                                                            \
+        /* Process CB prefix */                             \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        ValidateCPUState(state);                            \
+                                                            \
+        /* Process CB opcode */                             \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        state.SetFlag<CPU::Flags::Z>(true);                 \
+        state.SetFlag<CPU::Flags::N>(false);                \
+        state.SetFlag<CPU::Flags::H>(true);                 \
+        ValidateCPUState(state);                            \
+    }                                                       \
+                                                            \
+    TEST_F(GameBoyCPUDecode, CB_BIT_##bit##_##name##_UNSET) \
+    {                                                       \
+        std::vector<std::uint8_t> opcodes = {0xCB, opcode}; \
+        LoadData(opcodes);                                  \
+                                                            \
+        cpu_->SetRegister<targetReg>(~(1 << (bit)));        \
+                                                            \
+        CPU state;                                          \
+        SaveCPUState(state);                                \
+                                                            \
+        /* Process CB prefix */                             \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        ValidateCPUState(state);                            \
+                                                            \
+        /* Process CB opcode */                             \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        state.SetFlag<CPU::Flags::Z>(false);                \
+        state.SetFlag<CPU::Flags::N>(false);                \
+        state.SetFlag<CPU::Flags::H>(true);                 \
+        ValidateCPUState(state);                            \
+    }
+
+#define CB_DecodeBits(opcodeBase, name, targetReg)          \
+    CB_DecodeBit(opcodeBase, name, targetReg, 0)            \
+    CB_DecodeBit(opcodeBase + 0x8, name, targetReg, 1)      \
+    CB_DecodeBit(opcodeBase + 0x10, name, targetReg, 2)     \
+    CB_DecodeBit(opcodeBase + 0x18, name, targetReg, 3)     \
+    CB_DecodeBit(opcodeBase + 0x20, name, targetReg, 4)     \
+    CB_DecodeBit(opcodeBase + 0x28, name, targetReg, 5)     \
+    CB_DecodeBit(opcodeBase + 0x30, name, targetReg, 6)     \
+    CB_DecodeBit(opcodeBase + 0x38, name, targetReg, 7)
+
+CB_DecodeBits(0x40, B, CPU::Registers::B)
+CB_DecodeBits(0x41, C, CPU::Registers::C)
+CB_DecodeBits(0x42, D, CPU::Registers::D)
+CB_DecodeBits(0x43, E, CPU::Registers::E)
+CB_DecodeBits(0x44, H, CPU::Registers::H)
+CB_DecodeBits(0x45, L, CPU::Registers::L)
+CB_DecodeBits(0x47, A, CPU::Registers::A)
+
+#undef CB_DecodeBits
+#undef CB_DecodeBit
+
+#define CB_DecodeBit_HLAddr(bit)                                                    \
+    TEST_F(GameBoyCPUDecode, CB_BIT_##bit##_##HLAddr##_SET)                         \
+    {                                                                               \
+        std::vector<std::uint8_t> opcodes = {0xCB, 0x46 + (0x8 * bit)};             \
+        LoadData(opcodes);                                                          \
+                                                                                    \
+        auto mem = cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2;    \
+        cpu_->SetRegister<CPU::Registers::HL>(mem);                                 \
+        internalMem_->WriteUInt8(                                                   \
+            cpu_->GetRegister<CPU::Registers::HL>(), 1 << (bit));                   \
+                                                                                    \
+        CPU state;                                                                  \
+        SaveCPUState(state);                                                        \
+                                                                                    \
+        /* Process CB prefix */                                                     \
+        cpu_->ReceiveTick();                                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                                   \
+        ValidateCPUState(state);                                                    \
+                                                                                    \
+        /* Read HL Address */                                                       \
+        cpu_->ReceiveTick();                                                        \
+        ValidateCPUState(state);                                                    \
+                                                                                    \
+        /* Process CB opcode */                                                     \
+        cpu_->ReceiveTick();                                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                                   \
+        state.SetFlag<CPU::Flags::Z>(true);                                         \
+        state.SetFlag<CPU::Flags::N>(false);                                        \
+        state.SetFlag<CPU::Flags::H>(true);                                         \
+        ValidateCPUState(state);                                                    \
+    }                                                                               \
+                                                                                    \
+    TEST_F(GameBoyCPUDecode, CB_BIT_##bit##_##HLAddr##_UNSET)                       \
+    {                                                                               \
+        std::vector<std::uint8_t> opcodes = {0xCB, 0x46 + (0x8 * bit)};             \
+        LoadData(opcodes);                                                          \
+                                                                                    \
+        auto mem = cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2;    \
+        cpu_->SetRegister<CPU::Registers::HL>(mem);                                 \
+        std::uint8_t val = std::uint8_t(~(1 << (bit)));                             \
+        internalMem_->WriteUInt8(                                                   \
+            cpu_->GetRegister<CPU::Registers::HL>(), val);                          \
+                                                                                    \
+        CPU state;                                                                  \
+        SaveCPUState(state);                                                        \
+                                                                                    \
+        /* Process CB prefix */                                                     \
+        cpu_->ReceiveTick();                                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                                   \
+        ValidateCPUState(state);                                                    \
+                                                                                    \
+        /* Read HL Address */                                                       \
+        cpu_->ReceiveTick();                                                        \
+        ValidateCPUState(state);                                                    \
+                                                                                    \
+        /* Process CB opcode */                                                     \
+        cpu_->ReceiveTick();                                                        \
+        state.AddRegister<CPU::Registers::PC>(1);                                   \
+        state.SetFlag<CPU::Flags::Z>(false);                                        \
+        state.SetFlag<CPU::Flags::N>(false);                                        \
+        state.SetFlag<CPU::Flags::H>(true);                                         \
+        ValidateCPUState(state);                                                    \
+    }
+
+CB_DecodeBit_HLAddr(0)
+CB_DecodeBit_HLAddr(1)
+CB_DecodeBit_HLAddr(2)
+CB_DecodeBit_HLAddr(3)
+CB_DecodeBit_HLAddr(4)
+CB_DecodeBit_HLAddr(5)
+CB_DecodeBit_HLAddr(6)
+CB_DecodeBit_HLAddr(7)
+
+#undef CB_DecodeBit_HLAddr
+
+#pragma endregion CB_Bit
