@@ -1,5 +1,7 @@
 #include "cpu.h"
 
+#include <components/exceptions/AddressInUse.h>
+
 #include <spdlog/spdlog.h>
 
 namespace emulator::gameboy {
@@ -55,6 +57,15 @@ void CPU::PushMicrocode(MicroCode code)
     }
 
     microcode_[microcodeStackLength_++] = code;
+}
+
+void CPU::AttachToBus(component::Bus* bus)
+{
+
+    if (!bus->RegisterComponentAddressRange(this, { 0xFF00, 0xFF70 })) {
+        throw component::AddressInUse(0xFF00, 0x70);
+    }
+    bus_ = bus;
 }
 
 void CPU::LogStacktrace() noexcept

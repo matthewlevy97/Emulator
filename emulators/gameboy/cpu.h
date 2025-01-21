@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <utility>
 
+#include <components/bus.h>
 #include <components/cpu.h>
 
 namespace emulator::gameboy {
@@ -265,6 +266,8 @@ public:
 
     void PowerOn() override;
     void PowerOff() override;
+
+    void AttachToBus(component::Bus* bus) override;
 
     void LogStacktrace() noexcept override;
 };
