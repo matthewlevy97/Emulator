@@ -191,6 +191,134 @@ DecodeNoJumpConditional(0x38, JR_C, CPU::Flags::C, true)
 #undef DecodeJumpConditional
 #undef DecodeNoJumpConditional
 
+TEST_F(GameBoyCPUDecode, DecodeJP_Addr)
+{
+    auto newPCAddress = cpu_->GetRegister<CPU::Registers::PC>();
+    newPCAddress += 20;
+    std::vector<std::uint8_t> opcodes = {
+        0xC3,
+        std::uint8_t(newPCAddress & 0xFF),
+        std::uint8_t(newPCAddress >> 8)};
+    LoadData(opcodes);
+
+    CPU state;
+    SaveCPUState(state);
+
+    /* Process Opcode and read lower 8bit */
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    /* Read upper 8bit */
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    /* Set PC */
+    cpu_->ReceiveTick();
+    state.SetRegister<CPU::Registers::PC>(newPCAddress);
+    ValidateCPUState(state);
+
+    /* Cycle NoOp for pipeline refresh */
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+#define DecodeJumpAbsConditional(opcode, condition, flag, flagValue)    \
+    TEST_F(GameBoyCPUDecode, DecodeJP_##condition##_Jump)               \
+    {                                                                   \
+        auto newPCAddress = cpu_->GetRegister<CPU::Registers::PC>();    \
+        newPCAddress += 20;                                             \
+        std::vector<std::uint8_t> opcodes = {                           \
+            opcode,                                                     \
+            std::uint8_t(newPCAddress & 0xFF),                          \
+            std::uint8_t(newPCAddress >> 8)};                           \
+        LoadData(opcodes);                                              \
+                                                                        \
+        cpu_->SetFlag<flag>(flagValue);                                 \
+                                                                        \
+        CPU state;                                                      \
+        SaveCPUState(state);                                            \
+                                                                        \
+        /* Process Opcode and read lower 8bit */                        \
+        cpu_->ReceiveTick();                                            \
+        state.AddRegister<CPU::Registers::PC>(1);                       \
+        ValidateCPUState(state);                                        \
+                                                                        \
+        /* Read upper 8bit */                                           \
+        cpu_->ReceiveTick();                                            \
+        state.AddRegister<CPU::Registers::PC>(1);                       \
+        ValidateCPUState(state);                                        \
+                                                                        \
+        /* Set PC */                                                    \
+        cpu_->ReceiveTick();                                            \
+        state.SetRegister<CPU::Registers::PC>(newPCAddress);            \
+        ValidateCPUState(state);                                        \
+                                                                        \
+        /* Cycle NoOp for pipeline refresh */                           \
+        cpu_->ReceiveTick();                                            \
+        state.AddRegister<CPU::Registers::PC>(1);                       \
+        ValidateCPUState(state);                                        \
+    }                                                                   \
+                                                                        \
+    TEST_F(GameBoyCPUDecode, DecodeJP_##condition##_NoJump)             \
+    {                                                                   \
+        auto newPCAddress = cpu_->GetRegister<CPU::Registers::PC>();    \
+        newPCAddress += 20;                                             \
+        std::vector<std::uint8_t> opcodes = {                           \
+            opcode,                                                     \
+            std::uint8_t(newPCAddress & 0xFF),                          \
+            std::uint8_t(newPCAddress >> 8)};                           \
+        LoadData(opcodes);                                              \
+                                                                        \
+        cpu_->SetFlag<flag>(!flagValue);                                \
+                                                                        \
+        CPU state;                                                      \
+        SaveCPUState(state);                                            \
+                                                                        \
+        /* Process Opcode and read lower 8bit */                        \
+        cpu_->ReceiveTick();                                            \
+        state.AddRegister<CPU::Registers::PC>(1);                       \
+        ValidateCPUState(state);                                        \
+                                                                        \
+        /* Read upper 8bit */                                           \
+        cpu_->ReceiveTick();                                            \
+        state.AddRegister<CPU::Registers::PC>(1);                       \
+        ValidateCPUState(state);                                        \
+                                                                        \
+        /* Cycle NoOp for pipeline refresh */                           \
+        cpu_->ReceiveTick();                                            \
+        state.AddRegister<CPU::Registers::PC>(1);                       \
+        ValidateCPUState(state);                                        \
+    }
+
+DecodeJumpAbsConditional(0xC2, NZ, CPU::Flags::Z, false)
+DecodeJumpAbsConditional(0xCA, Z, CPU::Flags::Z, true)
+DecodeJumpAbsConditional(0xD2, NC, CPU::Flags::C, false)
+DecodeJumpAbsConditional(0xDA, C, CPU::Flags::C, true)
+
+#undef DecodeJumpAbsConditional
+
+TEST_F(GameBoyCPUDecode, DecodeJP_HLAddr)
+{
+    auto newPCAddress = cpu_->GetRegister<CPU::Registers::PC>();
+    newPCAddress += 20;
+    std::vector<std::uint8_t> opcodes = {0xE9};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::HL>(newPCAddress);
+
+    CPU state;
+    SaveCPUState(state);
+
+    /* Set PC */
+    cpu_->ReceiveTick();
+    state.SetRegister<CPU::Registers::PC>(newPCAddress);
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
 #pragma endregion DecodeJump
 
 #pragma region DecodeIncDec16Cycle
@@ -222,6 +350,7 @@ DecodeIncDec8Cycle(INC_SP, 0x33, CPU::Registers::SP, 1)
 DecodeIncDec8Cycle(DEC_SP, 0x3B, CPU::Registers::SP, -1)
 
 #undef DecodeIncDec8Cycle
+
 #pragma endregion DecodeIncDec16Cycle
 
 #pragma region DecodeIncDec4Cycle
@@ -327,7 +456,8 @@ DecodeIncDec4Cycle(DEC_A, 0x3D, CPU::Registers::A, -1)
         LoadData(opcodes);                                                              \
                                                                                         \
         /* Set value to pop from stack */                                               \
-        cpu_->SetRegister<CPU::Registers::SP>(cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2); \
+        cpu_->SetRegister<CPU::Registers::SP>(                                          \
+            cpu_->GetRegister<CPU::Registers::PC>() + opcodes.size() * 2);              \
         internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::SP>(), 0x34);        \
         internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::SP>() + 1, 0x12);    \
                                                                                         \
