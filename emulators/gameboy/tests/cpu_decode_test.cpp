@@ -1041,6 +1041,60 @@ DecodeADDHL(SP, 0x39, CPU::Registers::SP)
 
 #pragma region DecodeLD
 
+#define DecodeLoadD8(opcode, name, targetReg)               \
+    TEST_F(GameBoyCPUDecode, DecodeLD_##name##_d8)          \
+    {                                                       \
+        std::vector<std::uint8_t> opcodes = {opcode, 0xCA}; \
+        LoadData(opcodes);                                  \
+                                                            \
+        CPU state;                                          \
+        SaveCPUState(state);                                \
+                                                            \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        ValidateCPUState(state);                            \
+                                                            \
+        cpu_->ReceiveTick();                                \
+        state.AddRegister<CPU::Registers::PC>(1);           \
+        state.SetRegister<targetReg>(0xCA);                 \
+        ValidateCPUState(state);                            \
+    }
+
+DecodeLoadD8(0x06, B, CPU::Registers::B)
+DecodeLoadD8(0x0E, C, CPU::Registers::C)
+DecodeLoadD8(0x16, D, CPU::Registers::D)
+DecodeLoadD8(0x1E, E, CPU::Registers::E)
+DecodeLoadD8(0x26, H, CPU::Registers::H)
+DecodeLoadD8(0x2E, L, CPU::Registers::L)
+DecodeLoadD8(0x3E, A, CPU::Registers::A)
+
+#undef DecodeLoadD8
+
+TEST_F(GameBoyCPUDecode, DecodeLD_HLAddr_d8)
+{
+    std::vector<std::uint8_t> opcodes = {0x36, 0xCA};
+    LoadData(opcodes);
+
+    std::uint16_t hlAddr = cpu_->GetRegister<CPU::Registers::PC>() + 10;
+    cpu_->SetRegister<CPU::Registers::HL>(hlAddr);
+    internalMem_->WriteUInt8(hlAddr, 0xDE);
+
+    CPU state;
+    SaveCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    cpu_->ReceiveTick();
+    ASSERT_EQ(internalMem_->ReadUInt8(hlAddr), 0xCA);
+    ValidateCPUState(state);
+
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
 #define DecodeLoad(opcode, dstName, dstReg, srcName, srcReg)    \
     TEST_F(GameBoyCPUDecode, DecodeLD_##dstName##_##srcName)    \
     {                                                           \
