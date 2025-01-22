@@ -244,6 +244,30 @@ private:
     void DecodeOpcode(std::uint8_t opcode);
 
     template <Registers reg>
+    MicroCode GenerateRL_RR(bool shiftLeft)
+    {
+        return [shiftLeft](CPU* cpu) {
+            int carry = cpu->GetFlag<Flags::C>();
+            std::uint8_t val = 0;
+
+            val = cpu->GetRegister<reg>();
+            if (shiftLeft) {
+                cpu->SetFlag<Flags::C>(val >> 7);
+                val <<= 1;
+                val |= carry;
+            } else {
+                cpu->SetFlag<Flags::C>(val & 0x1);
+                val >>= 1;
+                val |= carry << 7;
+            }
+            cpu->SetRegister<reg>(val);
+            cpu->SetFlag<Flags::Z>(val == 0);
+            cpu->SetFlag<Flags::H>(false);
+            cpu->SetFlag<Flags::N>(false);
+        };
+    }
+
+    template <Registers reg>
     MicroCode GenerateBit8(int bit)
     {
         return [bit](CPU* cpu) {
@@ -270,6 +294,67 @@ public:
     void AttachToBus(component::Bus* bus) override;
 
     void LogStacktrace() noexcept override;
+
+    // NoOp IO Instructions
+    void WriteUInt8(std::size_t address, std::uint8_t value) override
+    {
+        return;
+    }
+
+    void WriteInt8(std::size_t address, std::int8_t value) override
+    {
+        return;
+    }
+
+    void WriteUInt16(std::size_t address, std::uint16_t value) override
+    {
+        return;
+    }
+
+    void WriteInt16(std::size_t address, std::int16_t value) override
+    {
+        return;
+    }
+
+    void WriteUInt32(std::size_t address, std::uint32_t value) override
+    {
+        return;
+    }
+
+    void WriteInt32(std::size_t address, std::int32_t value) override
+    {
+        return;
+    }
+
+    std::uint8_t ReadUInt8(std::size_t address) override
+    {
+        return 0;
+    }
+
+    std::int8_t ReadInt8(std::size_t address) override
+    {
+        return 0;
+    }
+
+    std::uint16_t ReadUInt16(std::size_t address) override
+    {
+        return 0;
+    }
+
+    std::int16_t ReadInt16(std::size_t address) override
+    {
+        return 0;
+    }
+
+    std::uint32_t ReadUInt32(std::size_t address) override
+    {
+        return 0;
+    }
+
+    std::int32_t ReadInt32(std::size_t address) override
+    {
+        return 0;
+    }
 };
 
 }; // namespace emulator::gameboy

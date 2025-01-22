@@ -34,6 +34,10 @@ emulator::component::System* CreateSystem() {
         // Interrupt Enable Register (TODO: Make memory mapped IO)
         {"InterruptRegister", new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0xFFFF, 0x01)},
 
+        // Cartridge ROMs
+        {"CartridgeSwitchable", new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0x4000, 0x3FFF)},
+        {"Cartridge0", new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0x0100, 0x3EFF)},
+
         // Boot ROM
         {"BootROM", bootROM},
     }, debugger);
