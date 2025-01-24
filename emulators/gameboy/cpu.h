@@ -244,27 +244,69 @@ private:
     void DecodeOpcode(std::uint8_t opcode);
 
     template <Registers reg>
+    MicroCode GenerateRLC_RRC(bool shiftLeft)
+    {
+        if (shiftLeft) {
+            return [](CPU* cpu) {
+                std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<reg>());
+                int carry = (val >> 7) & 0x1;
+
+                val = (val << 1) | carry;
+                
+                cpu->SetRegister<reg>(val);
+                cpu->SetFlag<Flags::Z>(val == 0);
+                cpu->SetFlag<Flags::H>(false);
+                cpu->SetFlag<Flags::N>(false);
+                cpu->SetFlag<Flags::C>(carry);
+            };
+        } else {
+            return [](CPU* cpu) {
+                std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<reg>());
+                int carry = val & 0x1;
+
+                val = (val >> 1) | (carry << 7);
+
+                cpu->SetRegister<reg>(val);
+                cpu->SetFlag<Flags::Z>(val == 0);
+                cpu->SetFlag<Flags::H>(false);
+                cpu->SetFlag<Flags::N>(false);
+                cpu->SetFlag<Flags::C>(carry);
+            };
+        }
+    }
+
+    template <Registers reg>
     MicroCode GenerateRL_RR(bool shiftLeft)
     {
-        return [shiftLeft](CPU* cpu) {
-            int carry = cpu->GetFlag<Flags::C>();
-            std::uint8_t val = 0;
+        if (shiftLeft) {
+            return [](CPU* cpu) {
+                int carry = cpu->GetFlag<Flags::C>();
+                std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<reg>());
 
-            val = cpu->GetRegister<reg>();
-            if (shiftLeft) {
                 cpu->SetFlag<Flags::C>(val >> 7);
                 val <<= 1;
                 val |= carry;
-            } else {
+
+                cpu->SetRegister<reg>(val);
+                cpu->SetFlag<Flags::Z>(val == 0);
+                cpu->SetFlag<Flags::H>(false);
+                cpu->SetFlag<Flags::N>(false);
+            };
+        } else {
+            return [](CPU* cpu) {
+                int carry = cpu->GetFlag<Flags::C>();
+                std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<reg>());
+
                 cpu->SetFlag<Flags::C>(val & 0x1);
                 val >>= 1;
                 val |= carry << 7;
-            }
-            cpu->SetRegister<reg>(val);
-            cpu->SetFlag<Flags::Z>(val == 0);
-            cpu->SetFlag<Flags::H>(false);
-            cpu->SetFlag<Flags::N>(false);
-        };
+
+                cpu->SetRegister<reg>(val);
+                cpu->SetFlag<Flags::Z>(val == 0);
+                cpu->SetFlag<Flags::H>(false);
+                cpu->SetFlag<Flags::N>(false);
+            };
+        }
     }
 
     template <Registers reg>

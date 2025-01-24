@@ -127,6 +127,21 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    // RLCA
+    case 0x07:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            int carry = (val >> 7) & 0x1;
+            val = (val << 1) | carry;
+            cpu->SetRegister<Registers::A>(val);
+            cpu->SetFlag<Flags::Z>(false);
+            cpu->SetFlag<Flags::H>(false);
+            cpu->SetFlag<Flags::N>(false);
+            cpu->SetFlag<Flags::C>(carry);
+        });
+        break;
+    
     // ADD HL, BC
     case 0x09:
         // 8 Cycles
@@ -222,6 +237,21 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    // RRCA
+    case 0x0F:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            int carry = val & 0x1;
+            val = (val >> 1) | (carry << 7);
+            cpu->SetRegister<Registers::A>(val);
+            cpu->SetFlag<Flags::Z>(false);
+            cpu->SetFlag<Flags::H>(false);
+            cpu->SetFlag<Flags::N>(false);
+            cpu->SetFlag<Flags::C>(carry);
+        });
+        break;
+    
     // LD DE, d16
     case 0x11:
         // 12 Cycles
@@ -306,7 +336,24 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->AddRegister<Registers::PC>(1);
         });
         break;
-    
+
+    // RLA
+    case 0x17:
+        PushMicrocode([](CPU* cpu) {
+            std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+
+            int carry = cpu->GetFlag<Flags::C>();
+            cpu->SetFlag<Flags::C>(val >> 7);
+            val <<= 1;
+            val |= carry;
+            
+            cpu->SetRegister<Registers::A>(val);
+            cpu->SetFlag<Flags::Z>(false);
+            cpu->SetFlag<Flags::H>(false);
+            cpu->SetFlag<Flags::N>(false);
+        });
+        break;
+
     // JR r8
     case 0x18:
         scratch = new std::uint16_t;
@@ -432,6 +479,23 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             auto bus = cpu->bus_;
             *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
             cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+    
+    // RRA
+    case 0x1F:
+        PushMicrocode([](CPU* cpu) {
+            std::uint8_t val = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+
+            int carry = cpu->GetFlag<Flags::C>();
+            cpu->SetFlag<Flags::C>(val & 0x1);
+            val >>= 1;
+            val |= carry << 7;
+
+            cpu->SetRegister<Registers::A>(val);
+            cpu->SetFlag<Flags::Z>(false);
+            cpu->SetFlag<Flags::H>(false);
+            cpu->SetFlag<Flags::N>(false);
         });
         break;
 
@@ -1761,6 +1825,133 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
 
+    // CP A, B
+    case 0xB8:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::B>());
+            cpu->SetFlag<Flags::Z>(a == other);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, other));
+            cpu->SetFlag<Flags::C>(a < other);
+        });
+        break;
+    
+    // CP A, C
+    case 0xB9:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::C>());
+            cpu->SetFlag<Flags::Z>(a == other);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, other));
+            cpu->SetFlag<Flags::C>(a < other);
+        });
+        break;
+    
+    // CP A, D
+    case 0xBA:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::D>());
+            cpu->SetFlag<Flags::Z>(a == other);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, other));
+            cpu->SetFlag<Flags::C>(a < other);
+        });
+        break;
+    
+    // CP A, E
+    case 0xBB:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::E>());
+            cpu->SetFlag<Flags::Z>(a == other);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, other));
+            cpu->SetFlag<Flags::C>(a < other);
+        });
+        break;
+    
+    // CP A, H
+    case 0xBC:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::H>());
+            cpu->SetFlag<Flags::Z>(a == other);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, other));
+            cpu->SetFlag<Flags::C>(a < other);
+        });
+        break;
+    
+    // CP A, L
+    case 0xBD:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t>(cpu->GetRegister<Registers::L>());
+            cpu->SetFlag<Flags::Z>(a == other);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, other));
+            cpu->SetFlag<Flags::C>(a < other);
+        });
+        break;
+    
+    // CP A, A
+    case 0xBF:
+        // 4 Cycles
+        PushMicrocode([](CPU* cpu) {
+            cpu->SetFlag<Flags::Z>(true);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(false);
+            cpu->SetFlag<Flags::C>(false);
+        });
+        break;
+
+    // RET NZ
+    case 0xC0:
+        scratch = new std::uint16_t;
+
+        // Always need a re-fetch cycle
+        PushMicrocode(CycleNoOp);
+
+        PushMicrocode([scratch](CPU* cpu) {
+            if (!cpu->GetFlag<Flags::Z>()) {
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Set register
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<Registers::PC>(*s);
+                    delete s;
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for upper
+                    auto bus = cpu->bus_;
+                    auto upper = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = (std::uint16_t(upper) << 8) | std::uint16_t(*s & 0xFF);
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for lower
+                    auto bus = cpu->bus_;
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+            }
+        });
+        break;
+
     // POP BC
     case 0xC1:
         scratch = new std::uint16_t;
@@ -1925,6 +2116,77 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    // RET Z
+    case 0xC8:
+        scratch = new std::uint16_t;
+
+        // Always need a re-fetch cycle
+        PushMicrocode(CycleNoOp);
+
+        PushMicrocode([scratch](CPU* cpu) {
+            if (cpu->GetFlag<Flags::Z>()) {
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Set register
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<Registers::PC>(*s);
+                    delete s;
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for upper
+                    auto bus = cpu->bus_;
+                    auto upper = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = (std::uint16_t(upper) << 8) | std::uint16_t(*s & 0xFF);
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for lower
+                    auto bus = cpu->bus_;
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+            }
+        });
+        break;
+    
+    // RET
+    case 0xC9:
+        scratch = new std::uint16_t;
+
+        // Always need a re-fetch cycle
+        PushMicrocode(CycleNoOp);
+        PushMicrocode([scratch](CPU* cpu) {
+            // Set register
+            auto s = static_cast<std::uint16_t*>(scratch);
+            cpu->SetRegister<Registers::PC>(*s);
+            delete s;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            // Pop 1-byte for upper
+            auto bus = cpu->bus_;
+            auto upper = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+            auto s = static_cast<std::uint16_t*>(scratch);
+            *s = (std::uint16_t(upper) << 8) | std::uint16_t(*s & 0xFF);
+
+            cpu->AddRegister<Registers::SP>(1);
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            // Pop 1-byte for lower
+            auto bus = cpu->bus_;
+
+            auto s = static_cast<std::uint16_t*>(scratch);
+            *s = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+            cpu->AddRegister<Registers::SP>(1);
+        });
+        break;
+
     // JP Z, a16
     case 0xCA:
         scratch = new std::uint16_t;
@@ -2056,6 +2318,44 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             *s = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
 
             cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+
+    // RET NC
+    case 0xD0:
+        scratch = new std::uint16_t;
+
+        // Always need a re-fetch cycle
+        PushMicrocode(CycleNoOp);
+
+        PushMicrocode([scratch](CPU* cpu) {
+            if (!cpu->GetFlag<Flags::C>()) {
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Set register
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<Registers::PC>(*s);
+                    delete s;
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for upper
+                    auto bus = cpu->bus_;
+                    auto upper = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = (std::uint16_t(upper) << 8) | std::uint16_t(*s & 0xFF);
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for lower
+                    auto bus = cpu->bus_;
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+            }
         });
         break;
 
@@ -2194,6 +2494,44 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
     
+    // RET C
+    case 0xD8:
+        scratch = new std::uint16_t;
+
+        // Always need a re-fetch cycle
+        PushMicrocode(CycleNoOp);
+
+        PushMicrocode([scratch](CPU* cpu) {
+            if (cpu->GetFlag<Flags::C>()) {
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Set register
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    cpu->SetRegister<Registers::PC>(*s);
+                    delete s;
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for upper
+                    auto bus = cpu->bus_;
+                    auto upper = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = (std::uint16_t(upper) << 8) | std::uint16_t(*s & 0xFF);
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+                cpu->PushMicrocode([scratch](CPU* cpu) {
+                    // Pop 1-byte for lower
+                    auto bus = cpu->bus_;
+
+                    auto s = static_cast<std::uint16_t*>(scratch);
+                    *s = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::SP>());
+
+                    cpu->AddRegister<Registers::SP>(1);
+                });
+            }
+        });
+        break;
+
     // JP C, a16
     case 0xDA:
         scratch = new std::uint16_t;
@@ -2450,6 +2788,27 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
 
+    // CP A, u8
+    case 0xFE:
+        scratch = new std::uint8_t;
+
+        // 4 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto other = static_cast<std::uint8_t*>(scratch);
+            cpu->SetFlag<Flags::Z>(a == *other);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, *other));
+            cpu->SetFlag<Flags::C>(a < *other);
+            delete other;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+
     default:
         spdlog::critical("Unknown Opcode 0x{:02X} @ 0x{:04X}", opcode, GetRegister<Registers::PC>()-1);
         throw std::runtime_error("Unknown opcode");
@@ -2466,6 +2825,65 @@ void CPU::DecodeCBOpcode()
 
     switch(opcode & 0xF0)
     {
+    case 0x00:
+        // RLC and RRC
+        switch((opcode - 0x10) & 0x7)
+        {
+        case 0x0:
+            PushMicrocode(GenerateRLC_RRC<Registers::B>((opcode & 0xF) < 0x8));
+            break;
+        case 0x1:
+            PushMicrocode(GenerateRLC_RRC<Registers::C>((opcode & 0xF) < 0x8));
+            break;
+        case 0x2:
+            PushMicrocode(GenerateRLC_RRC<Registers::D>((opcode & 0xF) < 0x8));
+            break;
+        case 0x3:
+            PushMicrocode(GenerateRLC_RRC<Registers::E>((opcode & 0xF) < 0x8));
+            break;
+        case 0x4:
+            PushMicrocode(GenerateRLC_RRC<Registers::H>((opcode & 0xF) < 0x8));
+            break;
+        case 0x5:
+            PushMicrocode(GenerateRLC_RRC<Registers::L>((opcode & 0xF) < 0x8));
+            break;
+        case 0x6:
+            scratch = new std::uint8_t;
+            PushMicrocode([scratch](CPU* cpu) {
+                // Write Back
+                auto bus = cpu->bus_;
+                auto val = static_cast<std::uint8_t*>(scratch);
+                bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(), *val);
+                delete val;
+            });
+            PushMicrocode([opcode, scratch](CPU* cpu) {
+                int carry;
+                auto val = static_cast<std::uint8_t*>(scratch);
+                if ((opcode & 0xF) < 0x8) {
+                    carry = (*val >> 7) & 0x1;
+                    *val = (*val << 1) | carry;
+                } else {
+                    carry = *val & 0x1;
+                    *val = (*val >> 1) | (carry << 7);
+                }
+                cpu->SetFlag<Flags::Z>(*val == 0);
+                cpu->SetFlag<Flags::H>(false);
+                cpu->SetFlag<Flags::N>(false);
+                cpu->SetFlag<Flags::C>(carry);
+            });
+            PushMicrocode([scratch](CPU* cpu) {
+                // Write Back
+                auto bus = cpu->bus_;
+                auto val = static_cast<std::uint8_t*>(scratch);
+                *val = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
+            });
+            break;
+        case 0x7:
+            PushMicrocode(GenerateRLC_RRC<Registers::A>((opcode & 0xF) < 0x8));
+            break;
+        }
+        break;
+    
     case 0x10:
         // RL and RR
         switch((opcode - 0x10) & 0x7)
