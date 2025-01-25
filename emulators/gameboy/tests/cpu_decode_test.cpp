@@ -3,8 +3,8 @@
 #include <emulator.h>
 
 #include <components/cpu.h>
-#include <components/multimappedmemory.h>
 #include <components/memory.h>
+#include <components/multimappedmemory.h>
 
 #include "cpu.h"
 
@@ -18,10 +18,10 @@ using emulator::gameboy::CPU;
 class GameBoyCPUDecode : public ::testing::Test
 {
 protected:
-    emulator::component::System *system_;
-    CPU *cpu_;
-    MultiMappedMemory<MemoryType::ReadWrite> *internalMem_;
-    Memory<MemoryType::ReadWrite> *upperInternalMem_;
+    emulator::component::System* system_;
+    CPU* cpu_;
+    MultiMappedMemory<MemoryType::ReadWrite>* internalMem_;
+    Memory<MemoryType::ReadWrite>* upperInternalMem_;
 
     std::size_t validationCount_;
 
@@ -36,10 +36,10 @@ protected:
     virtual void SetUp()
     {
         system_ = CreateSystem();
-        cpu_ = reinterpret_cast<CPU *>(system_->GetComponent("CPU"));
-        internalMem_ = reinterpret_cast<MultiMappedMemory<MemoryType::ReadWrite> *>(
+        cpu_ = reinterpret_cast<CPU*>(system_->GetComponent("CPU"));
+        internalMem_ = reinterpret_cast<MultiMappedMemory<MemoryType::ReadWrite>*>(
             system_->GetComponent("Internal8KiBRAM"));
-        upperInternalMem_ = reinterpret_cast<Memory<MemoryType::ReadWrite> *>(
+        upperInternalMem_ = reinterpret_cast<Memory<MemoryType::ReadWrite>*>(
             system_->GetComponent("UpperInternalRAM"));
 
         cpu_->SetRegister<CPU::Registers::PC>(0xC000);
@@ -54,8 +54,7 @@ protected:
 
     void LoadData(std::vector<std::uint8_t> data)
     {
-        for (std::size_t i = 0; i < data.size(); i++)
-        {
+        for (std::size_t i = 0; i < data.size(); i++) {
             internalMem_->WriteUInt8(0xC000 + i, data[i]);
         }
 
@@ -63,12 +62,12 @@ protected:
         cpu_->ReceiveTick();
     }
 
-    void SaveCPUState(CPU &ctx)
+    void SaveCPUState(CPU& ctx)
     {
         ctx = *cpu_;
     }
 
-    void ValidateCPUState(CPU &ctx)
+    void ValidateCPUState(CPU& ctx)
     {
         validationCount_++;
 
@@ -124,8 +123,7 @@ TEST_F(GameBoyCPUDecode, DecodeNOOP)
     CPU state;
     SaveCPUState(state);
 
-    for (int i = 0; i < opcodes.size(); i++)
-    {
+    for (int i = 0; i < opcodes.size(); i++) {
         cpu_->ReceiveTick();
         state.AddRegister<CPU::Registers::PC>(1);
     }
@@ -178,8 +176,7 @@ TEST_F(GameBoyCPUDecode, DecodeNOOP)
         SaveCPUState(state);                                 \
                                                              \
         /* Move past NOP */                                  \
-        for (int i = 0; i < 6; i++)                          \
-        {                                                    \
+        for (int i = 0; i < 6; i++) {                        \
             cpu_->ReceiveTick();                             \
             state.AddRegister<CPU::Registers::PC>(1);        \
             ValidateCPUState(state);                         \
@@ -805,8 +802,7 @@ DecodePush(AF, 0xF5, CPU::Registers::AF);
         CPU state;                                                                                           \
         SaveCPUState(state);                                                                                 \
                                                                                                              \
-        for (int i = 4 + 4; --i;)                                                                            \
-        {                                                                                                    \
+        for (int i = 4 + 4; --i;) {                                                                          \
             cpu_->ReceiveTick();                                                                             \
         }                                                                                                    \
         state.AddRegister<CPU::Registers::PC>(2);                                                            \
@@ -1300,6 +1296,50 @@ DecodeADDHL(SP, 0x39, CPU::Registers::SP);
 #pragma endregion DecodeADD
 
 #pragma region DecodeLD
+
+TEST_F(GameBoyCPUDecode, DecodeLD_u16_SP)
+{
+    std::uint16_t addr = cpu_->GetRegister<CPU::Registers::PC>() + 10;
+    std::vector<std::uint8_t> opcodes = {
+        0x08,
+        static_cast<std::uint8_t>(addr & 0xFF),
+        static_cast<std::uint8_t>(addr >> 8)};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::SP>(0x1234);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Read Z
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt16(addr), 0x0000);
+    ValidateCPUState(state);
+
+    // Read W
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt16(addr), 0x0000);
+    ValidateCPUState(state);
+
+    // Write LSB(SP)
+    cpu_->ReceiveTick();
+    ASSERT_EQ(internalMem_->ReadUInt8(addr), 0x34);
+    ASSERT_EQ(internalMem_->ReadUInt8(addr+1), 0x00);
+    ValidateCPUState(state);
+
+    // Write MSB(SP)
+    cpu_->ReceiveTick();
+    ASSERT_EQ(internalMem_->ReadUInt8(addr), 0x34);
+    ASSERT_EQ(internalMem_->ReadUInt8(addr+1), 0x12);
+    ValidateCPUState(state);
+
+    // Fetch next instruction
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
 
 #define DecodeLoadD8(opcode, name, targetReg)               \
     TEST_F(GameBoyCPUDecode, DecodeLD_##name##_d8)          \
@@ -2718,7 +2758,7 @@ CB_DecodeRL(0x17, A, CPU::Registers::A);
 
 #pragma endregion CB_RL
 
-#pragma regions DecodeRRA
+#pragma region DecodeRRA
 
 TEST_F(GameBoyCPUDecode, DecodeRRA_MSBZero)
 {

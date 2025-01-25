@@ -1,0 +1,16 @@
+{
+    BasedOnStyle: LLVM,
+    UseTab: Never,
+    IndentWidth: 4,
+    TabWidth: 4,
+    BreakBeforeBraces: Linux,
+    AllowShortIfStatementsOnASingleLine: false,
+    AllowShortLambdasOnASingleLine: Empty,
+    IndentCaseLabels: false,
+    ColumnLimit: 0,
+    AccessModifierOffset: -4,
+    FixNamespaceComments: false,
+    PointerAlignment: Left,
+    SortIncludes: true,
+    IncludeBlocks: Preserve,
+}
