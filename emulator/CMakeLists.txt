@@ -16,8 +16,8 @@ function(CreateNewEmulatorTarget target_name)
 
     target_include_directories(${target_name}
         PRIVATE
-            ${CMAKE_SOURCE_DIR}/emulators
-            ${CMAKE_SOURCE_DIR}/emulators/debugger
+            ${CMAKE_SOURCE_DIR}/emulator
+            ${CMAKE_SOURCE_DIR}/emulator/debugger
     )
 
     if(NOT (BUILD_TESTS AND WIN32))
@@ -26,7 +26,7 @@ function(CreateNewEmulatorTarget target_name)
 
     if(BUILD_TESTS)
         file(GLOB_RECURSE emulator_sources
-            CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/emulators/${target_name}/tests/*.cpp
+            CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/emulator/systems/${target_name}/tests/*.cpp
         )
         add_executable(${target_name}_test ${emulator_sources})
         target_link_libraries(${target_name}_test
@@ -37,8 +37,8 @@ function(CreateNewEmulatorTarget target_name)
         )
         target_include_directories(${target_name}_test
             PRIVATE
-                ${CMAKE_SOURCE_DIR}/emulators
-                ${CMAKE_SOURCE_DIR}/emulators/${target_name}
+                ${CMAKE_SOURCE_DIR}/emulator
+                ${CMAKE_SOURCE_DIR}/emulator/systems/${target_name}
         )
         gtest_discover_tests(${target_name}_test)
     endif()
@@ -53,7 +53,7 @@ function(LinkCoreEmulatorDeps target_name)
     )
     target_include_directories(${target_name}
         PRIVATE
-            ${CMAKE_SOURCE_DIR}/emulators
+            ${CMAKE_SOURCE_DIR}/emulator
     )
 
     install(TARGETS ${target_name} DESTINATION bin)
@@ -62,7 +62,7 @@ endfunction()
 add_subdirectory(components)
 
 # Emulators to build
-add_subdirectory(gameboy)
+add_subdirectory(systems)
 
 # Main emulator
 add_subdirectory(debugger)

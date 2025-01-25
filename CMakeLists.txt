@@ -36,4 +36,4 @@ endif()
 
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL TRUE FORCE)
 
-add_subdirectory(emulators)
+add_subdirectory(emulator)

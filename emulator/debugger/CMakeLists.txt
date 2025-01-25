@@ -10,7 +10,7 @@ target_sources(debugger
 
 target_include_directories(debugger
     PRIVATE
-        ${CMAKE_SOURCE_DIR}/emulators
+        ${CMAKE_SOURCE_DIR}/emulator
 )
 
 target_link_libraries(debugger
