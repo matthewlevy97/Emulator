@@ -1506,6 +1506,33 @@ DecodeLoadHLAddr(0x77, A, CPU::Registers::A);
 
 #undef DecodeLoadHLAddr
 
+TEST_F(GameBoyCPUDecode, DecodeLD_FromFF00_d8)
+{
+    static constexpr std::uint16_t kOffset = 0xDE;
+    std::vector<std::uint8_t> opcodes = {0xF0, kOffset};
+    LoadData(opcodes);
+
+    upperInternalMem_->WriteUInt8(0xFF00 | kOffset, 0xCA);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Read the offset d8
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    // Read value 0xFF00 + d8
+    cpu_->ReceiveTick();
+    ValidateCPUState(state);
+
+    // Set A
+    cpu_->ReceiveTick();
+    state.SetRegister<CPU::Registers::A>(0xCA);
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
 TEST_F(GameBoyCPUDecode, DecodeLD_ToFF00_d8)
 {
     static constexpr std::uint16_t kOffset = 0xDE;
@@ -1756,7 +1783,7 @@ TEST_F(GameBoyCPUDecode, DecodeLD_FromHLAddressDec)
 
 #undef DecodeLoadAddr
 
-#define DecodeLoadFromImediate(opcode, name, targetReg)           \
+#define DecodeLoadFromImmediate(opcode, name, targetReg)          \
     TEST_F(GameBoyCPUDecode, DecodeLD##name##_FromImmediate)      \
     {                                                             \
         std::vector<std::uint8_t> opcodes = {opcode, 0xFE, 0xCA}; \
@@ -1783,12 +1810,84 @@ TEST_F(GameBoyCPUDecode, DecodeLD_FromHLAddressDec)
         ValidateCPUState(state);                                  \
     }
 
-DecodeLoadFromImediate(0x01, BC, CPU::Registers::BC);
-DecodeLoadFromImediate(0x11, DE, CPU::Registers::DE);
-DecodeLoadFromImediate(0x21, HL, CPU::Registers::HL);
-DecodeLoadFromImediate(0x31, SP, CPU::Registers::SP);
+DecodeLoadFromImmediate(0x01, BC, CPU::Registers::BC);
+DecodeLoadFromImmediate(0x11, DE, CPU::Registers::DE);
+DecodeLoadFromImmediate(0x21, HL, CPU::Registers::HL);
+DecodeLoadFromImmediate(0x31, SP, CPU::Registers::SP);
 
-#undef DecodeLoadFromImediate
+#undef DecodeLoadFromImmediate
+
+TEST_F(GameBoyCPUDecode, DecodeLD_u16_A)
+{
+    std::uint16_t writeAddr = cpu_->GetRegister<CPU::Registers::PC>() + 10;
+    std::vector<std::uint8_t> opcodes = {
+        0xEA,
+        static_cast<std::uint8_t>(writeAddr & 0xFF),
+        static_cast<std::uint8_t>(writeAddr >> 8)};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0xCA);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Read Z
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt8(writeAddr), 0x00);
+    ValidateCPUState(state);
+
+    // Read W
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ASSERT_EQ(internalMem_->ReadUInt8(writeAddr), 0x00);
+    ValidateCPUState(state);
+
+    // Write Memory
+    cpu_->ReceiveTick();
+    ASSERT_EQ(internalMem_->ReadUInt8(writeAddr), 0xCA);
+    ValidateCPUState(state);
+
+    // Fetch
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeLD_A_u16)
+{
+    std::uint16_t writeAddr = cpu_->GetRegister<CPU::Registers::PC>() + 10;
+    std::vector<std::uint8_t> opcodes = {
+        0xFA,
+        static_cast<std::uint8_t>(writeAddr & 0xFF),
+        static_cast<std::uint8_t>(writeAddr >> 8)};
+    LoadData(opcodes);
+
+    internalMem_->WriteUInt8(writeAddr, 0xCA);
+
+    CPU state;
+    SaveCPUState(state);
+
+    // Read Z
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    // Read W
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    // Read Memory
+    cpu_->ReceiveTick();
+    ValidateCPUState(state);
+
+    // Fetch and Set
+    cpu_->ReceiveTick();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.AddRegister<CPU::Registers::A>(0xCA);
+    ValidateCPUState(state);
+}
 
 #pragma endregion DecodeLD
 

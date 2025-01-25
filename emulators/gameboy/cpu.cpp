@@ -37,6 +37,8 @@ void CPU::ReceiveTick()
             onStepCallback_();
         }
 
+        LogStacktrace();
+
         // Fetch and generate microcode for execution
         auto pc = GetRegister<Registers::PC>();
         auto opcode = bus_->Read<std::uint8_t>(pc);
