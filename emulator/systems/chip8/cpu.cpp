@@ -57,7 +57,7 @@ void CPU::ReceiveTick()
                 // Jump to machine code routine at nnn
                 pc_ = opcode & 0x0FFF;
             } else {
-                spdlog::critical("Unknown CB Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
+                spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
                 throw std::runtime_error("Unknown opcode");
             }
         }
@@ -172,7 +172,7 @@ void CPU::ReceiveTick()
             // TODO: Skip next instruction if key with the value of Vx is not pressed
             break;
         default:
-            spdlog::critical("Unknown CB Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
+            spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
             throw std::runtime_error("Unknown opcode");
         }
         break;
@@ -180,7 +180,7 @@ void CPU::ReceiveTick()
         DecodeFOpcodes(opcode);
         break;
     default:
-        spdlog::critical("Unknown CB Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
+        spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
         throw std::runtime_error("Unknown opcode");
     }
 }

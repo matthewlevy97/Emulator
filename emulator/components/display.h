@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "component.h"
 
 namespace emulator::component
@@ -9,15 +11,15 @@ class Display : public IComponent
 {
 public:
     struct Pixel {
-        std::uint32_t r : 8;
-        std::uint32_t g : 8;
-        std::uint32_t b : 8;
-        std::uint32_t a : 8;
+        std::uint8_t r;
+        std::uint8_t g;
+        std::uint8_t b;
+        std::uint8_t a;
 
         Pixel() : r(0), g(0), b(0), a(0) {}
         Pixel(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) : r(r), g(g), b(b), a(a) {}
         Pixel(const Pixel& other) : r(other.r), g(other.g), b(other.b), a(other.a) {}
-    } __attribute__((packed));
+    };
 
 private:
     void ValidatePixelPosition(std::size_t x, std::size_t y) const
