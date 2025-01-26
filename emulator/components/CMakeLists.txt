@@ -20,9 +20,12 @@ target_precompile_headers(EmulatorComponentsInterface
     INTERFACE
         bus.h
         component.h
+        cpu.h
+        display.h
         memory.h
         multimappedmemory.h
         system.h
+        timer.h
 )
 
 if(BUILD_TESTS)

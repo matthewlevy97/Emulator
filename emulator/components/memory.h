@@ -23,7 +23,7 @@ protected:
 
 public:
     Memory(std::size_t size) : Memory(0, size) {}
-    Memory(std::size_t baseAddress, size_t size) : IComponent()
+    Memory(std::size_t baseAddress, size_t size) : IComponent(IComponent::ComponentType::Memory)
     {
         if (baseAddress_ + size < baseAddress_) {
             throw std::invalid_argument("Invalid address range");

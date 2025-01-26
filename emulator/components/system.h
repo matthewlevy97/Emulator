@@ -61,6 +61,17 @@ public:
         return it->second;
     }
 
+    std::vector<IComponent*> GetComponentsByType(IComponent::ComponentType type) const noexcept
+    {
+        std::vector<IComponent*> ret;
+        for (auto& [_, component] : components_) {
+            if (component->Type() == type) {
+                ret.push_back(component);
+            }
+        }
+        return ret;
+    }
+
     void Run()
     {
         while (true) {

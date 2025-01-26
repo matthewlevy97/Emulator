@@ -1,0 +1,84 @@
+#pragma once
+
+#include "component.h"
+
+namespace emulator::component
+{
+
+class Display : public IComponent
+{
+public:
+    struct Pixel {
+        std::uint32_t r : 8;
+        std::uint32_t g : 8;
+        std::uint32_t b : 8;
+        std::uint32_t a : 8;
+
+        Pixel() : r(0), g(0), b(0), a(0) {}
+        Pixel(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) : r(r), g(g), b(b), a(a) {}
+        Pixel(const Pixel& other) : r(other.r), g(other.g), b(other.b), a(other.a) {}
+    } __attribute__((packed));
+
+private:
+    void ValidatePixelPosition(std::size_t x, std::size_t y) const
+    {
+        if (x >= width_ || y >= height_) {
+            throw std::out_of_range("Pixel position out of range for display");
+        }
+    }
+
+protected:
+    std::size_t width_{0}, height_{0};
+
+    std::vector<Pixel> pixels_;
+
+public:
+    Display(std::size_t width, std::size_t height)
+        : IComponent(IComponent::ComponentType::Display),
+          width_(width), height_(height)
+    {
+        pixels_.resize(width_ * height_);
+    }
+
+    void ReceiveTick() override
+    {
+    }
+
+    void PowerOn() override
+    {
+    }
+
+    void PowerOff() override
+    {
+    }
+
+    std::size_t GetWidth() const noexcept
+    {
+        return width_;
+    }
+
+    std::size_t GetHeight() const noexcept
+    {
+        return height_;
+    }
+
+    const Pixel& GetPixel(std::size_t x, std::size_t y) const
+    {
+        ValidatePixelPosition(x, y);
+        return pixels_[y * width_ + x];
+    }
+
+    void SetPixel(std::size_t x, std::size_t y, const Pixel& pixel)
+    {
+        ValidatePixelPosition(x, y);
+        pixels_[y * width_ + x] = pixel;
+    }
+
+    void SetPixel(std::size_t x, std::size_t y, std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a)
+    {
+        ValidatePixelPosition(x, y);
+        pixels_[y * width_ + x] = Pixel(r, g, b, a);
+    }
+};
+
+}; // namespace emulator::component

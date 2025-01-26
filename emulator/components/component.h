@@ -9,7 +9,20 @@ namespace emulator::component {
 class Bus;
 
 class IComponent {
+public:
+    enum class ComponentType {
+        CPU,
+        Memory,
+        Display,
+        Input,
+        Sound,
+        Timer,
+        Other
+    };
+
 protected:
+    ComponentType type_{ComponentType::Other};
+
     Bus *bus_;
     Bus *GetBus() const { return bus_; }
 
@@ -32,8 +45,12 @@ protected:
     }
 
 public:
-    IComponent() : bus_(nullptr) {}
+    IComponent(ComponentType type) : IComponent(type, nullptr) {}
+    IComponent(ComponentType type, Bus* bus) : type_{type}, bus_(bus) {}
+
     virtual inline ~IComponent() = default;
+
+    ComponentType Type() const noexcept { return type_; }
 
     virtual void ReceiveTick() = 0;
 
