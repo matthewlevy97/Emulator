@@ -1,8 +1,14 @@
 #include <emulator.h>
 #include <components/memory.h>
-#include <components/multimappedmemory.h>
+
+#include "cpu.h"
 
 emulator::component::System* CreateSystem() {
-    auto system = new emulator::component::System("Chip8", 1.0f, {});
+    auto memory = new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0, 4096);
+    
+    auto system = new emulator::component::System("Chip8", 1.0f, {
+        {"CPU", new emulator::chip8::CPU()},
+        {"Memory", memory},
+    });
     return system;
 }

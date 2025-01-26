@@ -5,9 +5,9 @@
 
 #include <debugger/debugger.h>
 
-static const std::array<std::string, 1> emulators = {
-    "gameboy"
-};
+static const std::array<std::string, 2> emulators = {
+    "chip8",
+    "gameboy"};
 
 static int RunEmulator(emulator::core::EmulatorManager* manager, std::string name, bool enableDebugger = false)
 {
@@ -17,7 +17,7 @@ static int RunEmulator(emulator::core::EmulatorManager* manager, std::string nam
         return -1;
     }
     auto system = createSystem();
-    
+
     system->PowerOn();
 
     auto sysDebugger = system->GetDebugger();
@@ -32,7 +32,9 @@ static int RunEmulator(emulator::core::EmulatorManager* manager, std::string nam
     spdlog::info("Starting emulator: {}", system->Name());
     try {
         system->Run();
-    } catch(const std::exception &e) {
+        spdlog::info("Emulator {} exited", system->Name());
+        system->PowerOff();
+    } catch (const std::exception& e) {
         spdlog::critical("EXCEPTION: {}", e.what());
         system->LogStacktrace();
     }
@@ -56,5 +58,5 @@ int main()
     }
 
     // Run target emulator
-    return RunEmulator(manager, "gameboy");
+    return RunEmulator(manager, "chip8");
 }

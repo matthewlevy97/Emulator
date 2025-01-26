@@ -76,6 +76,11 @@ public:
         enableDebugging_ = enabled;
     }
 
+    bool DebuggerEnabled() const noexcept
+    {
+        return enableDebugging_;
+    }
+
     emulator::debugger::ISystemDebugger* GetDebugger() const noexcept
     {
         return debugger_;

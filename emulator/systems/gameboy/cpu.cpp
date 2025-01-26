@@ -4,16 +4,19 @@
 
 #include <spdlog/spdlog.h>
 
-namespace emulator::gameboy {
+namespace emulator::gameboy
+{
 
 CPU::CPU() : microcodeStackLength_(0), microcode_{}, registers_{}
-{}
+{
+}
 
 CPU::CPU(const CPU& other)
     : microcodeStackLength_(other.microcodeStackLength_),
-    microcode_(other.microcode_),
-    registers_(other.registers_)
-{}
+      microcode_(other.microcode_),
+      registers_(other.registers_)
+{
+}
 
 CPU::~CPU() {}
 
@@ -37,12 +40,10 @@ void CPU::ReceiveTick()
             onStepCallback_();
         }
 
-        LogStacktrace();
-
         // Fetch and generate microcode for execution
         auto pc = GetRegister<Registers::PC>();
         auto opcode = bus_->Read<std::uint8_t>(pc);
-        SetRegister<Registers::PC>(pc + 1);
+        AddRegister<Registers::PC>(1);
 
         DecodeOpcode(opcode);
     }
@@ -64,7 +65,7 @@ void CPU::PushMicrocode(MicroCode code)
 void CPU::AttachToBus(component::Bus* bus)
 {
 
-    if (!bus->RegisterComponentAddressRange(this, { 0xFF00, 0xFF70 })) {
+    if (!bus->RegisterComponentAddressRange(this, {0xFF00, 0xFF70})) {
         throw component::AddressInUse(0xFF00, 0x70);
     }
     bus_ = bus;

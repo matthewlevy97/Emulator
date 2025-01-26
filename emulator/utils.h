@@ -23,4 +23,10 @@ char *Strsep(char** str, char sep) noexcept
     return start;
 }
 
+template <typename T>
+T GenerateRandom() noexcept
+{
+    return static_cast<T>(rand());
+}
+
 }; // namespace emulator
