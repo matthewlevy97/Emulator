@@ -45,7 +45,13 @@ function(CreateNewEmulatorTarget target_name)
 endfunction()
 
 function(CreateNewFrontendTarget target_name)
-    add_library(${target_name} SHARED "")
+    if(BUILD_TESTS AND WIN32)
+        add_library(${target_name} STATIC "")
+        message(STATUS "Windows is annoying and needs .lib files built instead of .dlls here")
+        message(STATUS "Rebuild without BUILD_TESTS enabled to actually run")
+    else()
+        add_library(${target_name} SHARED "")
+    endif()
 
     target_link_libraries(${target_name}
         PRIVATE
