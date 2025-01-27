@@ -7,6 +7,12 @@
 #include <core/emumanager.h>
 #include <debugger/debugger.h>
 
+/**
+ * TODO: Get Keyboard Input
+ * TODO: Relay Keyboard Input to all Input components
+ * TODO: Get the Display component and draw to screen
+ */
+
 namespace emulator::frontend
 {
 
