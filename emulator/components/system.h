@@ -37,12 +37,12 @@ public:
         return name_;
     }
 
-    void PowerOn()
+    void PowerOn() noexcept
     {
         bus_.PowerOn();
     }
 
-    void PowerOff()
+    void PowerOff() noexcept
     {
         bus_.PowerOff();
     }

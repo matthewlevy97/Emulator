@@ -35,12 +35,12 @@ public:
         }
     }
 
-    void PowerOn() override
+    void PowerOn() noexcept override
     {
         counter_ = startValue_;
     }
 
-    void PowerOff() override
+    void PowerOff() noexcept override
     {}
 };
 

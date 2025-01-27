@@ -119,6 +119,15 @@ bool EmulatorManager::LoadEmulator(std::string name) noexcept
     return true;
 }
 
+std::vector<std::string> EmulatorManager::GetLoadedEmulators() const noexcept
+{
+    std::vector<std::string> emulators;
+    for (const auto& it : loadedEmulators_) {
+        emulators.push_back(it.first);
+    }
+    return emulators;
+}
+
 component::CreateSystemFunc EmulatorManager::GetSystem(std::string name) noexcept
 {
     static const char* symbolName = "CreateSystem";

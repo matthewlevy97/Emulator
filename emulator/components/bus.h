@@ -53,8 +53,8 @@ public:
 
     void ReceiveTick();
 
-    void PowerOn();
-    void PowerOff();
+    void PowerOn() noexcept;
+    void PowerOff() noexcept;
 
     void LogStacktrace() noexcept;
 

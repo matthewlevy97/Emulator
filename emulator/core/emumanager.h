@@ -30,6 +30,8 @@ public:
 
     bool LoadEmulator(std::string name) noexcept;
 
+    std::vector<std::string> GetLoadedEmulators() const noexcept;
+
     emulator::component::CreateSystemFunc GetSystem(std::string name) noexcept;
     emulator::debugger::Debugger& GetDebugger() noexcept { return debugger_; }
 };

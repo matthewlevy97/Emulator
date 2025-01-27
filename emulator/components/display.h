@@ -46,11 +46,11 @@ public:
     {
     }
 
-    void PowerOn() override
+    void PowerOn() noexcept override
     {
     }
 
-    void PowerOff() override
+    void PowerOff() noexcept override
     {
     }
 

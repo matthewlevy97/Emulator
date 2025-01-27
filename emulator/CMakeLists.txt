@@ -44,16 +44,43 @@ function(CreateNewEmulatorTarget target_name)
     endif()
 endfunction()
 
-function(LinkCoreEmulatorDeps target_name)
+function(CreateNewFrontendTarget target_name)
+    add_library(${target_name} SHARED "")
+
     target_link_libraries(${target_name}
         PRIVATE
             EmulatorComponentsInterface
             EmulatorComponents
+
+            debugger
+            
             spdlog::spdlog_header_only
     )
     target_include_directories(${target_name}
         PRIVATE
             ${CMAKE_SOURCE_DIR}/emulator
+            ${CMAKE_SOURCE_DIR}/emulator/debugger
+    )
+
+    install(TARGETS ${target_name} DESTINATION bin/lib/)
+endfunction()
+
+function(LinkCoreEmulatorDeps target_name target_frontend)
+    target_link_libraries(${target_name}
+        PRIVATE
+            EmulatorComponentsInterface
+            EmulatorComponents
+
+            debugger
+            ${target_frontend}
+
+            spdlog::spdlog_header_only
+    )
+    target_include_directories(${target_name}
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}/emulator
+            ${CMAKE_SOURCE_DIR}/emulator/debugger
+            ${CMAKE_SOURCE_DIR}/emulator/frontends
     )
 
     install(TARGETS ${target_name} DESTINATION bin)
@@ -64,6 +91,9 @@ add_subdirectory(components)
 # Emulators to build
 add_subdirectory(systems)
 
-# Main emulator
+# Frontends / UIs
+add_subdirectory(frontends)
+
+# Core Features
 add_subdirectory(debugger)
 add_subdirectory(core)

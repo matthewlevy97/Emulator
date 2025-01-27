@@ -54,8 +54,8 @@ public:
 
     virtual void ReceiveTick() = 0;
 
-    virtual void PowerOn() = 0;
-    virtual void PowerOff() = 0;
+    virtual void PowerOn() noexcept = 0;
+    virtual void PowerOff() noexcept = 0;
 
     virtual void AttachToBus(Bus *bus)
     {

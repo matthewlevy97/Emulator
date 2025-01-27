@@ -49,9 +49,9 @@ void CPU::ReceiveTick()
     }
 }
 
-void CPU::PowerOn() {}
+void CPU::PowerOn() noexcept {}
 
-void CPU::PowerOff() {}
+void CPU::PowerOff() noexcept {}
 
 void CPU::PushMicrocode(MicroCode code)
 {

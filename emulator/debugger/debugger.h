@@ -19,9 +19,10 @@ public:
     Debugger(std::uint16_t port, bool onlyLocalhost = true);
     ~Debugger();
 
-    void RegisterDebugger(ISystemDebugger*);
     ISystemDebugger* GetCurrentDebugger() const { return currentDebugger_; };
-    bool SelectDebugger(std::string name);
+
+    void RegisterDebugger(ISystemDebugger*) noexcept;
+    bool SelectDebugger(std::string name) noexcept;
 };
 
 }; // namespace emulator::debugger

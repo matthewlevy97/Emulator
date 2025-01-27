@@ -4,6 +4,6 @@ target_sources(emulator
         emumanager.cpp
 )
 
-LinkCoreEmulatorDeps(emulator)
+LinkCoreEmulatorDeps(emulator ImGUIOpenGL)
 
-target_link_libraries(emulator PRIVATE debugger)
+set_target_properties(emulator PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/bin/lib") 

@@ -65,8 +65,8 @@ public:
 
     void ReceiveTick() override {};
 
-    void PowerOn() override {};
-    void PowerOff() override {};
+    void PowerOn() noexcept override {};
+    void PowerOff() noexcept override {};
 
     void WriteUInt8(std::size_t address, std::uint8_t value) override
     {

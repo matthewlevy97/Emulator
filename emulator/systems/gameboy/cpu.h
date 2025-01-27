@@ -330,8 +330,8 @@ public:
 
     void ReceiveTick() override;
 
-    void PowerOn() override;
-    void PowerOff() override;
+    void PowerOn() noexcept override;
+    void PowerOff() noexcept override;
 
     void AttachToBus(component::Bus* bus) override;
 

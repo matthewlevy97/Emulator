@@ -50,12 +50,12 @@ Debugger::~Debugger()
     }
 }
 
-void Debugger::RegisterDebugger(ISystemDebugger* debugger)
+void Debugger::RegisterDebugger(ISystemDebugger* debugger) noexcept
 {
     debuggers_.push_back(debugger);
 }
 
-bool Debugger::SelectDebugger(std::string name)
+bool Debugger::SelectDebugger(std::string name) noexcept
 {
     for (auto debugger : debuggers_) {
         if (debugger->GetName() == name) {

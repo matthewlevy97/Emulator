@@ -1,0 +1,8 @@
+[submodule "emulator/frontends/vendor/imgui"]
+	path = emulator/frontends/vendor/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
+[submodule "emulator/frontends/vendor/SDL"]
+	path = emulator/frontends/vendor/SDL
+	url = https://github.com/libsdl-org/SDL.git
+	branch = master
