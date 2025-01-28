@@ -81,6 +81,20 @@ public:
         ValidatePixelPosition(x, y);
         pixels_[y * width_ + x] = Pixel(r, g, b, a);
     }
+
+    std::uint32_t* GetPixelData(std::size_t& pixelDataWidth, std::size_t& pixelDataHeight) const noexcept
+    {
+        auto pixels = new std::uint32_t[width_ * height_];
+
+        for (std::size_t i = 0; i < width_ * height_; ++i) {
+            auto& pixel = pixels_[i];
+            pixels[i] = (pixel.r << 24) | (pixel.g << 16) | (pixel.b << 8) | pixel.a;
+        }
+
+        pixelDataWidth = width_;
+        pixelDataHeight = height_;
+        return pixels;
+    }
 };
 
 }; // namespace emulator::component

@@ -1,4 +1,6 @@
 function(UseVendor_ImGUISDL target_name)
+    option(ENABLE_IMGUI_DEMO "Enable ImGui Demo Window" ON)
+
     set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/emulator/frontends/vendor/imgui")
     set(SDL_DIR "${CMAKE_SOURCE_DIR}/emulator/frontends/vendor/SDL")
 
@@ -19,8 +21,17 @@ function(UseVendor_ImGUISDL target_name)
             ${IMGUI_DIR}/imgui_widgets.cpp
 
             ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
-            ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+            ${IMGUI_DIR}/backends/imgui_impl_sdlrenderer3.cpp
     )
+
+    if (ENABLE_IMGUI_DEMO)
+        target_sources(${target_name}
+            PRIVATE
+                ${IMGUI_DIR}/imgui_demo.cpp
+        )
+
+        target_compile_definitions(${target_name} PRIVATE ENABLE_IMGUI_DEMO=1)
+    endif()
 
     target_include_directories(${target_name}
         PRIVATE

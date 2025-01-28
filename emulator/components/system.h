@@ -5,8 +5,15 @@
 #include <debugger/sysdebugger.h>
 
 #include "bus.h"
+#include "display.h"
 
 namespace emulator::component {
+
+enum class SystemStatus {
+    RUNNING,
+    STOPPING,
+    HALTED,
+};
 
 class System {
 private:
@@ -72,14 +79,21 @@ public:
         return ret;
     }
 
-    void Run()
+    void Run(volatile SystemStatus& status)
     {
-        while (true) {
+        while (status == SystemStatus::RUNNING) {
             if (enableDebugging_ && debugger_ != nullptr && debugger_->IsStopped()) {
                 continue;
             }
             bus_.ReceiveTick();
         }
+        status = SystemStatus::HALTED;
+    }
+
+    void Run()
+    {
+        SystemStatus status = SystemStatus::RUNNING;
+        Run(status);
     }
 
     void UseDebugger(bool enabled = true) noexcept

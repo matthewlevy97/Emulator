@@ -2,12 +2,37 @@
 
 #include "emumanager.h"
 
-#include <debugger/debugger.h>
 #include <ImGUIOpenGL/frontend.h>
+#include <debugger/debugger.h>
 
 static const std::array<std::string, 2> emulators = {
     "chip8",
     "gameboy"};
+
+static emulator::component::System* GetSystem(emulator::core::EmulatorManager* manager,
+                                              std::string name,
+                                              bool enableDebugger = false) noexcept
+{
+    auto createSystem = manager->GetSystem(name);
+    if (!createSystem) {
+        spdlog::error("Failed to get system handle for {}", name);
+        return nullptr;
+    }
+    auto system = createSystem();
+
+    system->PowerOn();
+
+    auto sysDebugger = system->GetDebugger();
+    if (enableDebugger && sysDebugger != nullptr) {
+        auto& debugger = manager->GetDebugger();
+        debugger.RegisterDebugger(sysDebugger);
+        debugger.SelectDebugger(sysDebugger->GetName());
+        system->UseDebugger(true);
+        spdlog::info("Registed {} for remote debugging", sysDebugger->GetName());
+    }
+
+    return system;
+}
 
 int main()
 {
@@ -24,16 +49,8 @@ int main()
         }
     }
 
-    auto frontend = new emulator::frontend::imgui_opengl::ImGuiFrontend(manager);
-
-    auto system = frontend->GetSystem("chip8");
-    spdlog::info("Starting emulator: {}", system->Name());
-    try {
-        system->Run();
-        spdlog::info("Emulator {} exited", system->Name());
-        system->PowerOff();
-    } catch (const std::exception& e) {
-        spdlog::critical("EXCEPTION: {}", e.what());
-        system->LogStacktrace();
-    }
+    auto system = GetSystem(manager, "chip8", true);
+    auto frontend = new emulator::frontend::imgui_opengl::ImGuiFrontend(system);
+    frontend->Initialize();
+    frontend->Run();
 }

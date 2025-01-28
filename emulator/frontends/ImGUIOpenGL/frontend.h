@@ -11,7 +11,7 @@ private:
     void *window_;
 
 public:
-    ImGuiFrontend(emulator::core::EmulatorManager* manager) : emulator::frontend::IFrontend(manager) {}
+    ImGuiFrontend(emulator::component::System* system) : emulator::frontend::IFrontend(system) {}
 
     bool Initialize() noexcept override;
     void Run() override;

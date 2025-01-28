@@ -93,6 +93,7 @@ function(LinkCoreEmulatorDeps target_name target_frontend)
 endfunction()
 
 add_subdirectory(components)
+add_subdirectory(debugger)
 
 # Emulators to build
 add_subdirectory(systems)
@@ -101,5 +102,4 @@ add_subdirectory(systems)
 add_subdirectory(frontends)
 
 # Core Features
-add_subdirectory(debugger)
 add_subdirectory(core)
