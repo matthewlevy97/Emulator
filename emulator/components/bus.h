@@ -5,12 +5,16 @@
 #include <unordered_map>
 #include <vector>
 
-#include "exceptions/InvalidAddress.h"
 #include "component.h"
+#include "exceptions/InvalidAddress.h"
 
-namespace emulator::component {
+namespace emulator::component
+{
 
-class Bus {
+class System;
+
+class Bus
+{
 private:
     std::vector<IComponent*> components_;
 
@@ -20,11 +24,13 @@ private:
 
         IComponent* component;
 
-        bool operator<(const AddressRange& other) const {
+        bool operator<(const AddressRange& other) const
+        {
             return std::tie(start, end) < std::tie(other.start, other.end);
         }
 
-        bool operator==(const AddressRange& other) const {
+        bool operator==(const AddressRange& other) const
+        {
             return start == other.start && end == other.end && component == other.component;
         }
     };
@@ -36,12 +42,18 @@ private:
 
     std::vector<AddressRange> addressRanges_;
 
+    emulator::component::System* system_{nullptr};
+
 public:
     Bus();
     ~Bus();
 
     template <typename T>
-    struct always_false : std::false_type {};
+    struct always_false : std::false_type {
+    };
+
+    void BindSystem(System* system) noexcept;
+    emulator::component::System* GetBoundSystem() noexcept { return system_; };
 
     void AddComponent(IComponent* component);
     void RemoveComponent(IComponent* component);
@@ -59,10 +71,11 @@ public:
     void LogStacktrace() noexcept;
 
     template <typename T>
-    T Read(std::size_t address) {
+    T Read(std::size_t address)
+    {
         static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>,
-            "Read function only accepts integral or floating point types.");
-        
+                      "Read function only accepts integral or floating point types.");
+
         // TODO: Improve so not O(n)
         for (const auto& watch : memoryWatchPoints_) {
             if (watch == address) {
@@ -96,9 +109,10 @@ public:
     }
 
     template <typename T>
-    void Write(std::size_t address, T value) {
+    void Write(std::size_t address, T value)
+    {
         static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value,
-            "Write function only accepts integral or floating point types.");
+                      "Write function only accepts integral or floating point types.");
 
         // TODO: Improve so not O(n)
         for (const auto& watch : memoryWatchPoints_) {

@@ -8,12 +8,35 @@
 
 namespace emulator::debugger {
 
-Debugger::Debugger(std::uint16_t port, bool onlyLocalhost) : runServerThread_(false), currentDebugger_(nullptr)
+Debugger::Debugger(std::uint16_t port, bool onlyLocalhost)
+    : runServerThread_(false), currentDebugger_(nullptr),
+    port_(port), onlyLocalhost_(onlyLocalhost)
+{}
+
+Debugger::~Debugger()
+{
+    if (runServerThread_) {
+        runServerThread_ = false;
+
+        if (serverThread_.joinable()) {
+            serverThread_.join();
+        }
+    }
+
+    for (int i = 0; i < debuggers_.size(); i++) {
+        auto& debugger = debuggers_[i];
+
+        delete debugger;
+        debugger = nullptr;
+    }
+}
+
+void Debugger::Start()
 {
     serverThread_ = std::thread{[&, this]() {
         runServerThread_ = true;
         socket::DebuggerSocketClient* client = nullptr;
-        auto server = socket::DebuggerSocketServer(port, onlyLocalhost);
+        auto server = socket::DebuggerSocketServer(port_, onlyLocalhost_);
 
         while (runServerThread_) {
             if (currentDebugger_ == nullptr) {
@@ -33,21 +56,6 @@ Debugger::Debugger(std::uint16_t port, bool onlyLocalhost) : runServerThread_(fa
             }
         }
     }};
-}
-
-Debugger::~Debugger()
-{
-    if (runServerThread_) {
-        runServerThread_ = false;
-        serverThread_.join();
-    }
-
-    for (int i = 0; i < debuggers_.size(); i++) {
-        auto& debugger = debuggers_[i];
-
-        delete debugger;
-        debugger = nullptr;
-    }
 }
 
 void Debugger::RegisterDebugger(ISystemDebugger* debugger) noexcept

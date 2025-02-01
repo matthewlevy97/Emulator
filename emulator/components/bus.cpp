@@ -10,6 +10,11 @@ Bus::~Bus() {
     }
 }
 
+void Bus::BindSystem(System* system) noexcept
+{
+    system_ = system;
+}
+
 void Bus::AddComponent(IComponent* component)
 {
     component->AttachToBus(this);

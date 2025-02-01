@@ -3,8 +3,12 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <thread>
+#include <vector>
 
+#include <components/display.h>
+#include <components/input.h>
 #include <components/system.h>
+
 #include <debugger/debugger.h>
 
 /**
@@ -25,6 +29,9 @@ protected:
     emulator::component::SystemStatus systemStatus_{emulator::component::SystemStatus::RUNNING};
     emulator::component::System* system_;
     std::thread systemThread_;
+
+    emulator::component::Display* display_{nullptr};
+    std::vector<emulator::component::Input*> inputs_;
 
     std::size_t width_{1280}, height_{720};
 
@@ -48,9 +55,30 @@ protected:
 
     void StopSystem()
     {
-        spdlog::info("Stopping emulator: {}", system_->Name());
         systemStatus_ = emulator::component::SystemStatus::STOPPING;
-        systemThread_.join();
+        if (systemThread_.joinable()) {
+            systemThread_.join();
+        }
+    }
+
+    bool LoadDisplay() noexcept
+    {
+        auto displays = system_->GetComponentsByType(emulator::component::IComponent::ComponentType::Display);
+        if (displays.size() != 1) {
+            spdlog::error("Expected 1 display component, found {}", displays.size());
+            return false;
+        }
+        display_ = dynamic_cast<emulator::component::Display*>(displays[0]);
+        return true;
+    }
+
+    void LoadInputs() noexcept
+    {
+        auto inputs = system_->GetComponentsByType(emulator::component::IComponent::ComponentType::Input);
+        std::transform(inputs.begin(), inputs.end(), std::back_inserter(inputs_),
+                       [](emulator::component::IComponent* component) {
+                           return dynamic_cast<emulator::component::Input*>(component);
+                       });
     }
 
 public:
@@ -59,6 +87,10 @@ public:
         if (system == nullptr) {
             throw std::invalid_argument("System cannot be null");
         }
+        if (!LoadDisplay()) {
+            throw std::runtime_error("Failed to load display component");
+        }
+        LoadInputs();
     }
 
     virtual ~IFrontend() = default;
@@ -66,6 +98,8 @@ public:
     virtual bool Initialize() noexcept = 0;
     virtual void Run() = 0;
     virtual void Shutdown() noexcept = 0;
+
+    virtual void ScaleSystemDisplay(std::size_t scale) noexcept = 0;
 };
 
 }; // namespace emulator::frontend

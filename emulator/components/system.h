@@ -31,6 +31,8 @@ public:
         std::unordered_map<std::string, IComponent*> components,
         emulator::debugger::ISystemDebugger* debugger = nullptr)
         : name_(name), tickRate_(tickRate), components_(components), debugger_(debugger) {
+            bus_.BindSystem(this);
+        
         for (auto& [name, component] : components) {
             bus_.AddComponent(component);
         }
@@ -66,6 +68,28 @@ public:
             return nullptr;
         }
         return it->second;
+    }
+
+    template<typename T>
+    T* GetFirstComponentByType(IComponent::ComponentType type) const noexcept
+    {
+        for (auto& [_, component] : components_) {
+            if (component->Type() == type) {
+                return reinterpret_cast<T*>(component);
+            }
+        }
+        return nullptr;
+    }
+
+    template<>
+    IComponent* GetFirstComponentByType(IComponent::ComponentType type) const noexcept
+    {
+        for (auto& [_, component] : components_) {
+            if (component->Type() == type) {
+                return component;
+            }
+        }
+        return nullptr;
     }
 
     std::vector<IComponent*> GetComponentsByType(IComponent::ComponentType type) const noexcept

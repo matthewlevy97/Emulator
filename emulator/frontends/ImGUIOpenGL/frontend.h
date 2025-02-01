@@ -16,6 +16,8 @@ public:
     bool Initialize() noexcept override;
     void Run() override;
     void Shutdown() noexcept override;
+
+    void ScaleSystemDisplay(std::size_t scale) noexcept;
 };
 
 }; // namespace emulator::frontend

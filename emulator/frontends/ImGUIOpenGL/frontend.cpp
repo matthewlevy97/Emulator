@@ -57,6 +57,15 @@ bool ImGuiFrontend::Initialize() noexcept
     return true;
 }
 
+void ImGuiFrontend::ScaleSystemDisplay(std::size_t scale) noexcept
+{
+    SDL_Window* window = (SDL_Window*)window_;
+
+    // Update window size
+    display_->SetScale(scale);
+    SDL_SetWindowSize(window, (int)display_->GetWidth() * scale, (int)display_->GetHeight() * scale);
+}
+
 void ImGuiFrontend::Run()
 {
     // Run the emulator in new thread
@@ -68,25 +77,32 @@ void ImGuiFrontend::Run()
     ImGuiIO& io = ImGui::GetIO();
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    auto displays = system_->GetComponentsByType(emulator::component::IComponent::ComponentType::Display);
-    if (displays.size() != 1) {
-        spdlog::error("Expected 1 display component, found {}", displays.size());
-        return;
-    }
-    auto display = dynamic_cast<emulator::component::Display*>(displays[0]);
-
     // Update window size
-    SDL_SetWindowSize(window, display->GetWidth(), display->GetHeight());
+    ScaleSystemDisplay(10);
 
     while (systemStatus_ == emulator::component::SystemStatus::RUNNING) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
-            if (event.type == SDL_EVENT_QUIT) {
+            switch (event.type) {
+            case SDL_EVENT_QUIT:
                 systemStatus_ = emulator::component::SystemStatus::STOPPING;
-            }
-            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window)) {
-                systemStatus_ = emulator::component::SystemStatus::STOPPING;
+                break;
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                if (event.window.windowID == SDL_GetWindowID(window)) {
+                    systemStatus_ = emulator::component::SystemStatus::STOPPING;
+                }
+                break;
+            case SDL_EVENT_KEY_DOWN:
+                for (auto& input : inputs_) {
+                    input->PressKey(event.key.key);
+                }
+                break;
+            case SDL_EVENT_KEY_UP:
+                for (auto& input : inputs_) {
+                    input->ReleaseKey(event.key.key);
+                }
+                break;
             }
         }
         if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
@@ -105,7 +121,7 @@ void ImGuiFrontend::Run()
 
         // Display system screen
         std::size_t displayWidth, displayHeight;
-        auto pixelData = display->GetPixelData(displayWidth, displayHeight);
+        auto pixelData = display_->GetPixelData(displayWidth, displayHeight);
 
         // Create surface from pixel data
         SDL_Surface* surface = SDL_CreateSurfaceFrom(displayWidth, displayHeight,
@@ -116,8 +132,8 @@ void ImGuiFrontend::Run()
         delete pixelData;
 
         // Render system display into current window
-        static ImVec2 topLeft = ImVec2(0, 0);
-        static ImVec2 bottomRight = ImVec2(displayWidth, displayHeight);
+        static ImVec2 topLeft = ImVec2(0.0f, 0.0f);
+        static ImVec2 bottomRight = ImVec2(float(displayWidth), float(displayHeight));
         ImGui::GetBackgroundDrawList()->AddImage((unsigned long long)texture, topLeft, bottomRight);
 
         // Rendering

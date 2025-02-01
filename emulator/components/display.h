@@ -16,9 +16,14 @@ public:
         std::uint8_t b;
         std::uint8_t a;
 
-        Pixel() : r(0), g(0), b(0), a(0) {}
+        Pixel() : r(0), g(0), b(0), a(255) {}
         Pixel(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) : r(r), g(g), b(b), a(a) {}
         Pixel(const Pixel& other) : r(other.r), g(other.g), b(other.b), a(other.a) {}
+
+        bool operator==(const Pixel& other) const
+        {
+            return r == other.r && g == other.g && b == other.b && a == other.a;
+        }
     };
 
 private:
@@ -31,6 +36,7 @@ private:
 
 protected:
     std::size_t width_{0}, height_{0};
+    std::size_t scale_{1};
 
     std::vector<Pixel> pixels_;
 
@@ -64,6 +70,26 @@ public:
         return height_;
     }
 
+    std::size_t GetScale() const noexcept
+    {
+        return scale_;
+    }
+
+    void SetScale(std::size_t scale) noexcept
+    {
+        scale_ = scale;
+    }
+
+    void ClearScreen(const Pixel& pixel) noexcept
+    {
+        std::fill(pixels_.begin(), pixels_.end(), pixel);
+    }
+
+    void ClearScreen() noexcept
+    {
+        std::fill(pixels_.begin(), pixels_.end(), Pixel());
+    }
+
     const Pixel& GetPixel(std::size_t x, std::size_t y) const
     {
         ValidatePixelPosition(x, y);
@@ -82,17 +108,34 @@ public:
         pixels_[y * width_ + x] = Pixel(r, g, b, a);
     }
 
+    /**
+     * Returns pointer to RGBA encoded pixel data.
+     * The pixel data is scaled by a previously set scale value,
+     * allowing larger output than the system's actual resolution.
+     *
+     * @note Caller is responsible for deleting the returned pointer
+     */
     std::uint32_t* GetPixelData(std::size_t& pixelDataWidth, std::size_t& pixelDataHeight) const noexcept
     {
-        auto pixels = new std::uint32_t[width_ * height_];
+        // This can be large / overflow
+        // Don't be stupid
+        auto pixels = new std::uint32_t[width_ * height_ * scale_ * scale_];
 
         for (std::size_t i = 0; i < width_ * height_; ++i) {
             auto& pixel = pixels_[i];
-            pixels[i] = (pixel.r << 24) | (pixel.g << 16) | (pixel.b << 8) | pixel.a;
+
+            std::size_t x = i % width_;
+            std::size_t y = i / width_;
+            for (std::size_t dy = 0; dy < scale_; ++dy) {
+                for (std::size_t dx = 0; dx < scale_; ++dx) {
+                    std::size_t scaledIndex = ((y * scale_ + dy) * width_ * scale_) + (x * scale_ + dx);
+                    pixels[scaledIndex] = (pixel.r << 24) | (pixel.g << 16) | (pixel.b << 8) | pixel.a;
+                }
+            }
         }
 
-        pixelDataWidth = width_;
-        pixelDataHeight = height_;
+        pixelDataWidth = width_ * scale_;
+        pixelDataHeight = height_ * scale_;
         return pixels;
     }
 };

@@ -49,7 +49,7 @@ int main()
         }
     }
 
-    auto system = GetSystem(manager, "chip8", true);
+    auto system = GetSystem(manager, "chip8");
     auto frontend = new emulator::frontend::imgui_opengl::ImGuiFrontend(system);
     frontend->Initialize();
     frontend->Run();

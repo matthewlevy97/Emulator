@@ -22,6 +22,7 @@ target_precompile_headers(EmulatorComponentsInterface
         component.h
         cpu.h
         display.h
+        input.h
         memory.h
         multimappedmemory.h
         system.h

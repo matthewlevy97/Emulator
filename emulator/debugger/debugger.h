@@ -9,6 +9,9 @@ namespace emulator::debugger {
 
 class Debugger {
 private:
+    std::uint16_t port_;
+    bool onlyLocalhost_;
+
     volatile bool runServerThread_;
     std::thread serverThread_;
 
@@ -20,6 +23,8 @@ public:
     ~Debugger();
 
     ISystemDebugger* GetCurrentDebugger() const { return currentDebugger_; };
+
+    void Start();
 
     void RegisterDebugger(ISystemDebugger*) noexcept;
     bool SelectDebugger(std::string name) noexcept;

@@ -11,7 +11,7 @@ namespace emulator::chip8
 CPU::CPU()
 {
     registers_.fill(0);
-    pc_ = 0;
+    pc_ = 0x200;
     sp_ = 0;
     stack_.fill(0);
 }
@@ -40,9 +40,15 @@ void CPU::ReceiveTick()
     switch (opcode >> 24) {
     case 0x0:
         switch (opcode & 0x00FF) {
-        case 0xE0:
-            // TODO: Clear the screen
+        case 0xE0: {
+            auto display = bus_->GetBoundSystem()->GetFirstComponentByType<emulator::component::Display>(emulator::component::IComponent::ComponentType::Display);
+            if (!display) {
+                spdlog::critical("Display component not found");
+                throw std::runtime_error("Display component not found");
+            }
+            display->ClearScreen();
             break;
+        }
         case 0xEE:
             // Return from subroutine
             if (sp_ >= stack_.size()) {
@@ -145,7 +151,8 @@ void CPU::ReceiveTick()
         }
         break;
     case 0xA:
-        // TODO: Set I = nnn
+        // Set I = nnn
+        I_ = opcode & 0x0FFF;
         break;
     case 0xB:
         // Jump to location nnn + V0
@@ -161,16 +168,42 @@ void CPU::ReceiveTick()
         registers_[reg] = emulator::GenerateRandom<std::uint8_t>() & (opcode & 0x00FF);
         break;
     case 0xD:
-        // TODO: Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+        DisplaySprite(opcode);
         break;
     case 0xE:
         switch (opcode & 0x00FF) {
-        case 0x9E:
-            // TODO: Skip next instruction if key with the value of Vx is pressed
-            break;
-        case 0xA1:
-            // TODO: Skip next instruction if key with the value of Vx is not pressed
-            break;
+        case 0x9E: {
+            // Skip next instruction if key with the value of Vx is pressed
+            reg = (opcode & 0x0F00) >> 8;
+            if (reg >= registers_.size()) {
+                spdlog::critical("Unknown register V{:X} @ 0x{:04X}", reg, pc_ - sizeof(pc_));
+                throw std::runtime_error("Unknown register");
+            }
+            auto key = bus_->GetBoundSystem()->GetFirstComponentByType<emulator::component::Input>(emulator::component::IComponent::ComponentType::Input);
+            if (!key) {
+                spdlog::critical("Keyboard component not found");
+                throw std::runtime_error("Keyboard component not found");
+            }
+            if (key->IsPressed(registers_[reg])) {
+                pc_ += 2;
+            }
+        } break;
+        case 0xA1: {
+            // Skip next instruction if key with the value of Vx is not pressed
+            reg = (opcode & 0x0F00) >> 8;
+            if (reg >= registers_.size()) {
+                spdlog::critical("Unknown register V{:X} @ 0x{:04X}", reg, pc_ - sizeof(pc_));
+                throw std::runtime_error("Unknown register");
+            }
+            auto key = bus_->GetBoundSystem()->GetFirstComponentByType<emulator::component::Input>(emulator::component::IComponent::ComponentType::Input);
+            if (!key) {
+                spdlog::critical("Keyboard component not found");
+                throw std::runtime_error("Keyboard component not found");
+            }
+            if (!key->IsPressed(registers_[reg])) {
+                pc_ += 2;
+            }
+        } break;
         default:
             spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
             throw std::runtime_error("Unknown opcode");
@@ -298,30 +331,62 @@ void CPU::DecodeFOpcodes(std::uint16_t opcode)
     switch (opcode & 0x00FF) {
     case 0x07:
         // TODO: Set Vx = delay timer value
+        spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
+        throw std::runtime_error("Unknown opcode");
         break;
-    case 0x0A:
-        // TODO: Wait for a key press, store the value of the key in Vx
-        break;
+    case 0x0A: {
+        // Wait for a key press, store the value of the key in Vx
+        auto key = bus_->GetBoundSystem()->GetFirstComponentByType<emulator::component::Input>(emulator::component::IComponent::ComponentType::Input);
+        if (!key) {
+            spdlog::critical("Keyboard component not found");
+            throw std::runtime_error("Keyboard component not found");
+        }
+
+        bool waitingForKey = true;
+        key->SetKeyPressHandlers([this, opcode, &waitingForKey](emulator::component::Input::InputKeyCode key) {
+            registers_[(opcode & 0x0F00) >> 8] = key;
+            waitingForKey = false;
+        },
+                                 nullptr);
+        while (waitingForKey)
+            ;
+    } break;
     case 0x15:
         // TODO: Set delay timer = Vx
+        spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
+        throw std::runtime_error("Unknown opcode");
         break;
     case 0x18:
         // TODO: Set sound timer = Vx
+        spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
+        throw std::runtime_error("Unknown opcode");
         break;
     case 0x1E:
-        // TODO: Set I = I + Vx
+        // Set I = I + Vx
+        I_ += registers_[(opcode & 0x0F00) >> 8];
         break;
     case 0x29:
-        // TODO: Set I = location of sprite for digit Vx
+        // Set I = location of sprite for digit Vx
+        I_ = registers_[(opcode & 0x0F00) >> 8] * kSpriteLength;
+        I_ += kFontSetBaseAddress;
         break;
     case 0x33:
-        // TODO: Store BCD representation of Vx in memory locations I, I+1, and I+2
+        // Store BCD representation of Vx in memory locations I, I+1, and I+2
+        bus_->Write(I_, registers_[(opcode & 0x0F00) >> 8] / 100);
+        bus_->Write(I_ + 1, (registers_[(opcode & 0x0F00) >> 8] / 10) % 10);
+        bus_->Write(I_ + 2, registers_[(opcode & 0x0F00) >> 8] % 10);
         break;
     case 0x55:
-        // TODO: Store registers V0 through Vx in memory starting at location I
+        // Store registers V0 through Vx in memory starting at location I
+        for (std::size_t i = 0; i <= ((opcode & 0x0F00) >> 8); i++) {
+            bus_->Write(I_ + i, registers_[i]);
+        }
         break;
     case 0x65:
-        // TODO: Read registers V0 through Vx from memory starting at location I
+        // Read registers V0 through Vx from memory starting at location I
+        for (std::size_t i = 0; i <= ((opcode & 0x0F00) >> 8); i++) {
+            registers_[i] = bus_->Read<std::uint8_t>(I_ + i);
+        }
         break;
     default:
         spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
@@ -340,6 +405,44 @@ void CPU::LogStacktrace() noexcept
     spdlog::debug("[CPU] VC: {:02X}   VD: {:02X}   VE: {:02X}   VF: {:02X}",
                   registers_[12], registers_[13], registers_[14], registers_[15]);
     spdlog::debug("[CPU] PC: {:04X}   SP: {:02X}", pc_, sp_);
+}
+
+void CPU::DisplaySprite(std::uint16_t opcode)
+{
+    static emulator::component::Display::Pixel pixelOff(0, 0, 0, 255);
+    static emulator::component::Display::Pixel pixelOn(0, 0, 0, 255);
+
+    // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+    std::uint8_t reg = (opcode & 0x0F00) >> 8;
+    std::uint8_t reg2 = (opcode & 0x00F0) >> 4;
+    if (reg >= registers_.size() || reg2 >= registers_.size()) {
+        spdlog::critical("Unknown register V{:X} or V{:X} @ 0x{:04X}", reg, reg2, pc_ - sizeof(pc_));
+        throw std::runtime_error("Unknown register");
+    }
+
+    auto display = bus_->GetBoundSystem()->GetFirstComponentByType<emulator::component::Display>(emulator::component::IComponent::ComponentType::Display);
+    if (!display) {
+        spdlog::critical("Display component not found");
+        throw std::runtime_error("Display component not found");
+    }
+
+    auto x = registers_[reg];
+    auto y = registers_[reg2];
+    registers_[0xF] = 0;
+
+    for (std::size_t row = 0; row < (opcode & 0x000F); ++row) {
+        auto sprite_byte = bus_->Read<std::uint8_t>(I_ + row);
+        for (std::size_t col = 0; col < 8; ++col) {
+            if ((sprite_byte & (0x80 >> col)) != 0) {
+                auto previousPixel = display->GetPixel(x + col, y + row);
+                auto newPixel = sprite_byte ? pixelOn : pixelOff;
+                display->SetPixel(x + col, y + row, newPixel);
+                if (previousPixel != pixelOn) {
+                    registers_[0xF] = 1;
+                }
+            }
+        }
+    }
 }
 
 }; // namespace emulator::chip8
