@@ -63,7 +63,7 @@ void ImGuiFrontend::ScaleSystemDisplay(std::size_t scale) noexcept
 
     // Update window size
     display_->SetScale(scale);
-    SDL_SetWindowSize(window, (int)display_->GetWidth() * scale, (int)display_->GetHeight() * scale);
+    SDL_SetWindowSize(window, (int)display_->GetWidth() * scale, (int)display_->GetHeight() * scale + menuBarHeight_);
 }
 
 void ImGuiFrontend::Run()
@@ -131,9 +131,27 @@ void ImGuiFrontend::Run()
         SDL_DestroySurface(surface);
         delete pixelData;
 
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Emulator")) {
+                // Emulator settings
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(system_->Name().c_str())) {
+                // TODO: System specific settings
+                ImGui::EndMenu();
+            }
+
+            if (menuBarHeight_ == 0) {
+                menuBarHeight_ = ImGui::GetWindowHeight();
+                ScaleSystemDisplay(10);
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+
         // Render system display into current window
-        static ImVec2 topLeft = ImVec2(0.0f, 0.0f);
-        static ImVec2 bottomRight = ImVec2(float(displayWidth), float(displayHeight));
+        static ImVec2 topLeft = ImVec2(0.0f, menuBarHeight_);
+        static ImVec2 bottomRight = ImVec2(float(displayWidth), float(displayHeight) + menuBarHeight_);
         ImGui::GetBackgroundDrawList()->AddImage((unsigned long long)texture, topLeft, bottomRight);
 
         // Rendering

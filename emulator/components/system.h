@@ -117,7 +117,7 @@ public:
                 std::this_thread::sleep_for(interval - elapsed);
             } else {
                 elapsed -= interval;
-                spdlog::debug("[system] Tick took {}ms too long", elapsed.count());
+                spdlog::trace("Tick took {} ms too long", elapsed.count());
             }
         }
         status = SystemStatus::HALTED;
