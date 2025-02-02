@@ -102,4 +102,6 @@ public:
     virtual void ScaleSystemDisplay(std::size_t scale) noexcept = 0;
 };
 
+IFrontend* CreateFrontend(emulator::component::System* system);
+
 }; // namespace emulator::frontend

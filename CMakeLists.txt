@@ -3,11 +3,21 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# CMake Policies
+cmake_policy(SET CMP0079 NEW)
+
 option(CMAKE_POSITION_INDEPENDENT_CODE "Default value for POSITION_INDEPENDENT_CODE of targets" TRUE)
 
 project(Emulator)
 
 option(BUILD_TESTS "Build all tests" OFF)
+
+set(FRONTEND_OPTIONS "Desktop")
+set(TARGET_FRONTEND "Desktop" CACHE STRING "The frontend to use")
+
+if(NOT TARGET_FRONTEND IN_LIST FRONTEND_OPTIONS)
+  message(FATAL_ERROR "Invalid TARGET_FRONTEND: ${TARGET_FRONTEND}. Available options are: ${FRONTEND_OPTIONS}")
+endif()
 
 include(FetchContent)
 
@@ -36,4 +46,5 @@ endif()
 
 #set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL TRUE FORCE)
 
+set(EMULATOR_NAME "emulator")
 add_subdirectory(emulator)

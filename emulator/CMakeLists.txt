@@ -44,52 +44,24 @@ function(CreateNewEmulatorTarget target_name)
     endif()
 endfunction()
 
-function(CreateNewFrontendTarget target_name)
-    if(WIN32)
-        add_library(${target_name} STATIC "")
-        message(STATUS "Windows is annoying and needs .lib files built instead of .dlls here")
-        message(STATUS "Rebuild without BUILD_TESTS enabled to actually run")
-    else()
-        add_library(${target_name} SHARED "")
-    endif()
-
-    target_link_libraries(${target_name}
+function(LinkCoreEmulatorDeps)
+    target_link_libraries(${EMULATOR_NAME}
         PRIVATE
             EmulatorComponentsInterface
             EmulatorComponents
 
             debugger
-            
-            spdlog::spdlog_header_only
-    )
-    target_include_directories(${target_name}
-        PRIVATE
-            ${CMAKE_SOURCE_DIR}/emulator
-            ${CMAKE_SOURCE_DIR}/emulator/debugger
-    )
-
-    install(TARGETS ${target_name} DESTINATION bin/lib/)
-endfunction()
-
-function(LinkCoreEmulatorDeps target_name target_frontend)
-    target_link_libraries(${target_name}
-        PRIVATE
-            EmulatorComponentsInterface
-            EmulatorComponents
-
-            debugger
-            ${target_frontend}
 
             spdlog::spdlog_header_only
     )
-    target_include_directories(${target_name}
+    target_include_directories(${EMULATOR_NAME}
         PRIVATE
             ${CMAKE_SOURCE_DIR}/emulator
             ${CMAKE_SOURCE_DIR}/emulator/debugger
             ${CMAKE_SOURCE_DIR}/emulator/frontends
     )
 
-    install(TARGETS ${target_name} DESTINATION bin)
+    install(TARGETS ${EMULATOR_NAME} DESTINATION bin)
 endfunction()
 
 add_subdirectory(components)
@@ -98,8 +70,8 @@ add_subdirectory(debugger)
 # Emulators to build
 add_subdirectory(systems)
 
-# Frontends / UIs
-add_subdirectory(frontends)
-
 # Core Features
 add_subdirectory(core)
+
+# Frontends / UIs
+add_subdirectory(frontends)

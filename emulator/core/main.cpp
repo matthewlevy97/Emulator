@@ -2,7 +2,7 @@
 
 #include "emumanager.h"
 
-#include <ImGUIOpenGL/frontend.h>
+#include <frontend.h>
 #include <debugger/debugger.h>
 
 static const std::array<std::string, 2> emulators = {
@@ -50,7 +50,7 @@ int main()
     }
 
     auto system = GetSystem(manager, "chip8");
-    auto frontend = new emulator::frontend::imgui_opengl::ImGuiFrontend(system);
+    auto frontend = emulator::frontend::CreateFrontend(system);
     frontend->Initialize();
     frontend->Run();
 }

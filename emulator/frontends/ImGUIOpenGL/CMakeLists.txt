@@ -1,12 +1,17 @@
-CreateNewFrontendTarget(ImGUIOpenGL)
-target_sources(ImGUIOpenGL
-    PRIVATE
-        frontend.cpp
-)
-UseVendor_ImGUISDL(ImGUIOpenGL)
+# ImGUIOpenGL
+if (TARGET_FRONTEND STREQUAL "Desktop")
 
-find_package(OpenGL REQUIRED)
-target_link_libraries(ImGUIOpenGL
-    PUBLIC
-        ${OPENGL_LIBRARIES}
-)
+    target_sources(${EMULATOR_NAME}
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/frontend_init.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/frontend.cpp
+    )
+    UseVendor_ImGUISDL(${EMULATOR_NAME})
+
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(${EMULATOR_NAME}
+        PUBLIC
+            ${OPENGL_LIBRARIES}
+    )
+
+endif()

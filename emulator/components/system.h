@@ -70,23 +70,12 @@ public:
         return it->second;
     }
 
-    template<typename T>
+    template<typename T = IComponent>
     T* GetFirstComponentByType(IComponent::ComponentType type) const noexcept
     {
         for (auto& [_, component] : components_) {
             if (component->Type() == type) {
                 return reinterpret_cast<T*>(component);
-            }
-        }
-        return nullptr;
-    }
-
-    template<>
-    IComponent* GetFirstComponentByType(IComponent::ComponentType type) const noexcept
-    {
-        for (auto& [_, component] : components_) {
-            if (component->Type() == type) {
-                return component;
             }
         }
         return nullptr;
