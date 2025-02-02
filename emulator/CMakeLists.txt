@@ -11,7 +11,6 @@ function(CreateNewEmulatorTarget target_name)
         PRIVATE
             EmulatorComponentsInterface
             EmulatorComponents
-            spdlog::spdlog_header_only
     )
 
     target_include_directories(${target_name}
@@ -51,8 +50,6 @@ function(LinkCoreEmulatorDeps)
             EmulatorComponents
 
             debugger
-
-            spdlog::spdlog_header_only
     )
     target_include_directories(${EMULATOR_NAME}
         PRIVATE

@@ -11,6 +11,10 @@ target_include_directories(EmulatorComponents
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+target_link_libraries(EmulatorComponents
+    PUBLIC
+        spdlog::spdlog_header_only
+)
 
 add_library(EmulatorComponentsInterface INTERFACE)
 target_include_directories(EmulatorComponentsInterface INTERFACE 

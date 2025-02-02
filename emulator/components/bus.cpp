@@ -1,5 +1,7 @@
 #include "bus.h"
 
+#include <spdlog/spdlog.h>
+
 namespace emulator::component {
 
 Bus::Bus() {}
@@ -50,6 +52,7 @@ bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::si
         }
     }
 
+    spdlog::trace("[bus] Registering address range 0x{:X}-0x{:X}", range.first, range.second);
     addressRanges_.push_back({
         range.first,
         range.second,

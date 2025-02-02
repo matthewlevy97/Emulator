@@ -1,13 +1,16 @@
 #pragma once
 
+#include <chrono>
 #include <string>
+#include <spdlog/spdlog.h>
 
 #include <debugger/sysdebugger.h>
 
 #include "bus.h"
 #include "display.h"
 
-namespace emulator::component {
+namespace emulator::component
+{
 
 enum class SystemStatus {
     RUNNING,
@@ -15,10 +18,11 @@ enum class SystemStatus {
     HALTED,
 };
 
-class System {
+class System
+{
 private:
     std::string name_;
-    float tickRate_;
+    std::uint64_t tickRate_;
     Bus bus_;
 
     std::unordered_map<std::string, IComponent*> components_;
@@ -27,19 +31,21 @@ private:
     emulator::debugger::ISystemDebugger* debugger_;
 
 public:
-    System(std::string name, float tickRate,
-        std::unordered_map<std::string, IComponent*> components,
-        emulator::debugger::ISystemDebugger* debugger = nullptr)
-        : name_(name), tickRate_(tickRate), components_(components), debugger_(debugger) {
-            bus_.BindSystem(this);
-        
+    System(std::string name, std::uint64_t tickRate,
+           std::unordered_map<std::string, IComponent*> components,
+           emulator::debugger::ISystemDebugger* debugger = nullptr)
+        : name_(name), tickRate_(tickRate), components_(components), debugger_(debugger)
+    {
+        bus_.BindSystem(this);
+
         for (auto& [name, component] : components) {
             bus_.AddComponent(component);
         }
     }
 
     ~System()
-    {}
+    {
+    }
 
     std::string Name() const noexcept
     {
@@ -70,7 +76,7 @@ public:
         return it->second;
     }
 
-    template<typename T = IComponent>
+    template <typename T = IComponent>
     T* GetFirstComponentByType(IComponent::ComponentType type) const noexcept
     {
         for (auto& [_, component] : components_) {
@@ -81,12 +87,13 @@ public:
         return nullptr;
     }
 
-    std::vector<IComponent*> GetComponentsByType(IComponent::ComponentType type) const noexcept
+    template <typename T = IComponent>
+    std::vector<T*> GetComponentsByType(IComponent::ComponentType type) const noexcept
     {
-        std::vector<IComponent*> ret;
+        std::vector<T*> ret;
         for (auto& [_, component] : components_) {
             if (component->Type() == type) {
-                ret.push_back(component);
+                ret.push_back(static_cast<T*>(component));
             }
         }
         return ret;
@@ -94,11 +101,24 @@ public:
 
     void Run(volatile SystemStatus& status)
     {
+        std::chrono::milliseconds interval(1000 / tickRate_);
         while (status == SystemStatus::RUNNING) {
             if (enableDebugging_ && debugger_ != nullptr && debugger_->IsStopped()) {
                 continue;
             }
+
+            auto start = std::chrono::high_resolution_clock::now();
+            
             bus_.ReceiveTick();
+
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::milliseconds elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            if (elapsed <= interval) {
+                std::this_thread::sleep_for(interval - elapsed);
+            } else {
+                elapsed -= interval;
+                spdlog::debug("[system] Tick took {}ms too long", elapsed.count());
+            }
         }
         status = SystemStatus::HALTED;
     }

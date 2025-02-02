@@ -26,6 +26,8 @@ public:
         }
     };
 
+    Pixel clearColor_{Display::Pixel()};
+
 private:
     void ValidatePixelPosition(std::size_t x, std::size_t y) const
     {
@@ -87,7 +89,7 @@ public:
 
     void ClearScreen() noexcept
     {
-        std::fill(pixels_.begin(), pixels_.end(), Pixel());
+        std::fill(pixels_.begin(), pixels_.end(), clearColor_);
     }
 
     const Pixel& GetPixel(std::size_t x, std::size_t y) const

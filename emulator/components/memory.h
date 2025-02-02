@@ -43,15 +43,13 @@ public:
         }
     }
 
-    bool LoadData(const char* data, std::size_t size) noexcept
+    bool LoadData(const char* data, std::size_t size, std::size_t offset = 0) noexcept
     {
-        if (baseAddress_ + size > boundAddress_) {
+        if (baseAddress_ + offset + size > boundAddress_ || baseAddress_ + offset + size < baseAddress_) {
             return false;
         }
 
-        memory_.resize(size);
-        memory_.shrink_to_fit();
-        std::memcpy(memory_.data(), data, size);
+        std::memcpy(memory_.data() + offset, data, size);
         return true;
     }
 

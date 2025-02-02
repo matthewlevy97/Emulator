@@ -1,9 +1,13 @@
 #include <spdlog/spdlog.h>
 
+#include <components/input.h>
+#include <components/timer.h>
+
 #include "cpu.h"
 
-#include <components/bus.h>
 #include <utils.h>
+
+// TODO: Fix failing Not Released case
 
 namespace emulator::chip8
 {
@@ -14,6 +18,8 @@ CPU::CPU()
     pc_ = 0x200;
     sp_ = 0;
     stack_.fill(0);
+
+    pixelOn_ = emulator::component::Display::Pixel(128, 255, 128, 255);
 }
 
 CPU::CPU(const CPU& other)
@@ -30,14 +36,19 @@ CPU::~CPU()
 
 void CPU::ReceiveTick()
 {
-    auto opcode = bus_->Read<std::uint16_t>(pc_);
+    if (waitingForKeyChange_) {
+        return;
+    }
+
+    // Read Big Endian not Little Endian
+    std::uint16_t opcode = std::uint16_t(bus_->Read<std::uint8_t>(pc_) << 8) | bus_->Read<std::uint8_t>(pc_ + 1);
     pc_ += sizeof(opcode);
 
     std::uint8_t reg = 0;
     std::uint8_t reg2 = 0;
 
     // Decode and Execute Opcode
-    switch (opcode >> 24) {
+    switch (opcode >> 12) {
     case 0x0:
         switch (opcode & 0x00FF) {
         case 0xE0: {
@@ -184,7 +195,8 @@ void CPU::ReceiveTick()
                 spdlog::critical("Keyboard component not found");
                 throw std::runtime_error("Keyboard component not found");
             }
-            if (key->IsPressed(registers_[reg])) {
+
+            if (key->IsPressed(keymap_[registers_[reg]])) {
                 pc_ += 2;
             }
         } break;
@@ -200,7 +212,8 @@ void CPU::ReceiveTick()
                 spdlog::critical("Keyboard component not found");
                 throw std::runtime_error("Keyboard component not found");
             }
-            if (!key->IsPressed(registers_[reg])) {
+
+            if (!key->IsPressed(keymap_[registers_[reg]])) {
                 pc_ += 2;
             }
         } break;
@@ -329,38 +342,74 @@ void CPU::Decode8Opcodes(std::uint16_t opcode)
 void CPU::DecodeFOpcodes(std::uint16_t opcode)
 {
     switch (opcode & 0x00FF) {
-    case 0x07:
-        // TODO: Set Vx = delay timer value
-        spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
-        throw std::runtime_error("Unknown opcode");
-        break;
+    case 0x07: {
+        // Set Vx = delay timer value
+        auto timer = bus_->GetBoundSystem()->GetComponentsByType<emulator::component::Timer>(emulator::component::IComponent::ComponentType::Timer);
+        for (auto& t : timer) {
+            if (t->GetName() == "Delay") {
+                registers_[(opcode & 0x0F00) >> 8] = t->GetCounter();
+                break;
+            }
+        }
+    } break;
     case 0x0A: {
         // Wait for a key press, store the value of the key in Vx
-        auto key = bus_->GetBoundSystem()->GetFirstComponentByType<emulator::component::Input>(emulator::component::IComponent::ComponentType::Input);
-        if (!key) {
+        auto keyboard = bus_->GetBoundSystem()->GetFirstComponentByType<emulator::component::Input>(emulator::component::IComponent::ComponentType::Input);
+        if (!keyboard) {
             spdlog::critical("Keyboard component not found");
             throw std::runtime_error("Keyboard component not found");
         }
 
-        bool waitingForKey = true;
-        key->SetKeyPressHandlers([this, opcode, &waitingForKey](emulator::component::Input::InputKeyCode key) {
-            registers_[(opcode & 0x0F00) >> 8] = key;
-            waitingForKey = false;
-        },
-                                 nullptr);
-        while (waitingForKey)
-            ;
+        std::vector<std::uint8_t> currentlyPressedKeys;
+        for (auto& [k, v] : keymap_) {
+            if (keyboard->IsPressed(v)) {
+                currentlyPressedKeys.push_back(k);
+            }
+        }
+
+        keyboard->SetKeyPressHandlers(
+            nullptr,
+            [this, currentlyPressedKeys, opcode, keyboard](std::uint8_t key) {
+                for (auto& [k, v] : keymap_) {
+                    bool consider = true;
+                    for (auto& c : currentlyPressedKeys) {
+                        if (c == k) {
+                            consider = false;
+                            break;
+                        }
+                    }
+
+                    if (consider && v == key) {
+                        registers_[(opcode & 0x0F00) >> 8] = k;
+                        waitingForKeyChange_ = false;
+                        keyboard->SetKeyPressHandlers(nullptr, nullptr);
+                        break;
+                    }
+                }
+            });
+        waitingForKeyChange_ = true;
+
     } break;
-    case 0x15:
-        // TODO: Set delay timer = Vx
-        spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
-        throw std::runtime_error("Unknown opcode");
-        break;
-    case 0x18:
-        // TODO: Set sound timer = Vx
-        spdlog::critical("Unknown Opcode 0x{:04X} @ 0x{:04X}", opcode, pc_ - sizeof(pc_));
-        throw std::runtime_error("Unknown opcode");
-        break;
+    case 0x15: {
+        // Set delay timer = Vx
+        auto timer = bus_->GetBoundSystem()->GetComponentsByType<emulator::component::Timer>(emulator::component::IComponent::ComponentType::Timer);
+        for (auto& t : timer) {
+            if (t->GetName() == "Delay") {
+                t->SetCounter(registers_[(opcode & 0x0F00) >> 8]);
+                break;
+            }
+        }
+    } break;
+    case 0x18: {
+        // Set sound timer = Vx
+        auto timer = bus_->GetBoundSystem()->GetComponentsByType<emulator::component::Timer>(emulator::component::IComponent::ComponentType::Timer);
+        for (auto& t : timer) {
+            if (t->GetName() == "Sound") {
+                t->SetCounter(registers_[(opcode & 0x0F00) >> 8]);
+                break;
+            }
+        }
+    } break;
     case 0x1E:
         // Set I = I + Vx
         I_ += registers_[(opcode & 0x0F00) >> 8];
@@ -409,9 +458,6 @@ void CPU::LogStacktrace() noexcept
 
 void CPU::DisplaySprite(std::uint16_t opcode)
 {
-    static emulator::component::Display::Pixel pixelOff(0, 0, 0, 255);
-    static emulator::component::Display::Pixel pixelOn(0, 0, 0, 255);
-
     // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
     std::uint8_t reg = (opcode & 0x0F00) >> 8;
     std::uint8_t reg2 = (opcode & 0x00F0) >> 4;
@@ -432,15 +478,21 @@ void CPU::DisplaySprite(std::uint16_t opcode)
 
     for (std::size_t row = 0; row < (opcode & 0x000F); ++row) {
         auto sprite_byte = bus_->Read<std::uint8_t>(I_ + row);
-        for (std::size_t col = 0; col < 8; ++col) {
-            if ((sprite_byte & (0x80 >> col)) != 0) {
-                auto previousPixel = display->GetPixel(x + col, y + row);
-                auto newPixel = sprite_byte ? pixelOn : pixelOff;
-                display->SetPixel(x + col, y + row, newPixel);
-                if (previousPixel != pixelOn) {
+
+        for (std::size_t j = 0; j < 8; ++j) {
+            auto b = (sprite_byte & 0x80) >> 7;
+            auto col = (x + j) % display->GetWidth();
+
+            auto previousPixel = display->GetPixel(col, y + row);
+            if (b) {
+                if (previousPixel != display->clearColor_) {
+                    display->SetPixel(col, y + row, display->clearColor_);
                     registers_[0xF] = 1;
+                } else {
+                    display->SetPixel(col, y + row, pixelOn_);
                 }
             }
+            sprite_byte <<= 1;
         }
     }
 }

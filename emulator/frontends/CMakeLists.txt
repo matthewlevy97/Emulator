@@ -1,5 +1,5 @@
 function(UseVendor_ImGUISDL target_name)
-    option(ENABLE_IMGUI_DEMO "Enable ImGui Demo Window" ON)
+    option(ENABLE_IMGUI_DEMO "Enable ImGui Demo Window" OFF)
 
     set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/emulator/frontends/vendor/imgui")
     set(SDL_DIR "${CMAKE_SOURCE_DIR}/emulator/frontends/vendor/SDL")
