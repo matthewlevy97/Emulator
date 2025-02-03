@@ -49,7 +49,7 @@ int main()
         }
     }
 
-    auto system = GetSystem(manager, "chip8");
+    auto system = GetSystem(manager, "gameboy");
     auto frontend = emulator::frontend::CreateFrontend(system);
     frontend->Initialize();
     frontend->Run();

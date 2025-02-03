@@ -47,9 +47,9 @@ if(BUILD_TESTS)
             EmulatorComponents
     )
     target_include_directories(components_test
-            PRIVATE
-                ${CMAKE_SOURCE_DIR}/emulators
-                ${CMAKE_SOURCE_DIR}/emulators/components
-        )
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}/emulators
+            ${CMAKE_SOURCE_DIR}/emulators/components
+    )
     gtest_discover_tests(components_test)
 endif()

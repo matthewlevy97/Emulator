@@ -33,6 +33,8 @@ function(CreateNewEmulatorTarget target_name)
                 gtest
                 gtest_main
                 ${target_name}
+
+                spdlog::spdlog_header_only
         )
         target_include_directories(${target_name}_test
             PRIVATE
