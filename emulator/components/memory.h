@@ -81,7 +81,7 @@ public:
         memory_.shrink_to_fit();
 
         if (offset != 0) [[unlikely]] {
-            std::shift_left(memory_, offset);
+            std::shift_left(memory_.begin(), memory_.end(), offset);
         }
 
         // Update bus about change

@@ -19,7 +19,7 @@ emulator::component::System* CreateSystem()
 
     auto system = new emulator::component::System(
         "GameBoy",
-        1.0f,
+        4194304, // 4.194304 MHz
         {
             {emulator::gameboy::kDisplayName, new emulator::component::Display(64, 32)},
 
