@@ -62,6 +62,38 @@ bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::si
     return true;
 }
 
+bool Bus::UpdateComponentAddressRange(IComponent* component, std::pair<std::size_t, std::size_t> range) noexcept
+{
+    // Is this double loop the most efficient way to do this, no
+    // Is it the most readable, yes
+    for (const auto& addressable : addressRanges_) {
+        if (addressable.component == component) {
+            continue;
+        }
+
+        // If new address is within an existing address range, return false
+        if (range.first >= addressable.start && range.first < addressable.end) {
+            return false;
+        }
+        if (range.second >= addressable.start && range.second <= addressable.end) {
+            return false;
+        }
+    }
+
+    for (auto& addressable : addressRanges_) {
+        if (addressable.component == component) {
+            spdlog::trace("[bus] Updating address range 0x{:X}-0x{:X} -> 0x{:X}-0x{:X}",
+                addressable.start, addressable.end,
+                range.first, range.second);
+
+            addressable.start = range.first;
+            addressable.end = range.second;
+        }
+    }
+    
+    return true;
+}
+
 void Bus::AddMemoryWatchPoint(MemoryWatchAddress addr) noexcept
 {
     for (const auto& watch : memoryWatchPoints_) {

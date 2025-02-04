@@ -7,6 +7,9 @@
 
 #include <components/bus.h>
 #include <components/cpu.h>
+#include <components/system.h>
+
+#include "names.h"
 
 namespace emulator::gameboy {
 
@@ -340,7 +343,11 @@ public:
     // NoOp IO Instructions
     void WriteUInt8(std::size_t address, std::uint8_t value) override
     {
-        return;
+        if (address == 0xFF50) {
+            // Disable boot ROM if value != 0
+            auto system = bus_->GetBoundSystem();
+            bus_->RemoveComponent(system->GetComponent(kBootROMName));
+        }
     }
 
     void WriteInt8(std::size_t address, std::int8_t value) override

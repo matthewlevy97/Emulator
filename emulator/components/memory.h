@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstring>
 #include <vector>
 
@@ -18,7 +19,21 @@ enum class MemoryType
 
 template <MemoryType mtype>
 class Memory : public IComponent {
+public:
+    using ContextID = std::size_t;
+
 protected:
+    struct MemoryContext {
+        std::size_t offset;
+        std::size_t size;
+        void* data;
+
+        MemoryContext() : offset(0), size(0), data(nullptr) {}
+        MemoryContext(std::size_t offset, std::size_t size, void* data) : offset(offset), size(size), data(data) {}
+    };
+
+    std::vector<MemoryContext> contexts_;
+
     std::vector<std::uint8_t> memory_;
 
 public:
@@ -50,6 +65,51 @@ public:
         }
 
         std::memcpy(memory_.data() + offset, data, size);
+        return true;
+    }
+
+    void Remap(std::size_t baseAddress, std::size_t size, std::size_t offset = 0)
+    {
+        if (baseAddress + size < baseAddress) {
+            throw std::invalid_argument("Invalid address range");
+        }
+
+        baseAddress_ = baseAddress;
+        boundAddress_ = baseAddress + size;
+
+        memory_.resize(size);
+        memory_.shrink_to_fit();
+
+        if (offset != 0) [[unlikely]] {
+            std::shift_left(memory_, offset);
+        }
+
+        // Update bus about change
+        if (!bus_->UpdateComponentAddressRange(this, { baseAddress_, baseAddress_ + memory_.size() - 1 })) {
+            throw AddressInUse(baseAddress_, memory_.size());
+        }
+    }
+
+    ContextID SaveContext(std::size_t size, std::size_t offset = 0) noexcept
+    {
+        if (offset + size > memory_.size()) {
+            return ContextID(-1);
+        }
+
+        void* data = std::malloc(size);
+        std::memcpy(data, memory_.data() + offset, size);
+        contexts_.emplace_back(offset, size, data);
+        return ContextID(contexts_.size() - 1);
+    }
+
+    bool RestoreContext(ContextID id) noexcept
+    {
+        if (id >= contexts_.size()) {
+            return false;
+        }
+
+        auto& context = contexts_[id];
+        std::memcpy(memory_.data() + context.offset, context.data, context.size);
         return true;
     }
 

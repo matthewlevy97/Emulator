@@ -7,6 +7,7 @@
 #include <components/multimappedmemory.h>
 
 #include "cpu.h"
+#include "names.h"
 
 // TODO: Finish memory layout of GB
 
@@ -36,11 +37,11 @@ protected:
     virtual void SetUp()
     {
         system_ = CreateSystem();
-        cpu_ = reinterpret_cast<CPU*>(system_->GetComponent("CPU"));
+        cpu_ = reinterpret_cast<CPU*>(system_->GetComponent(emulator::gameboy::kCPUName));
         internalMem_ = reinterpret_cast<MultiMappedMemory<MemoryType::ReadWrite>*>(
-            system_->GetComponent("Internal8KiBRAM"));
+            system_->GetComponent(emulator::gameboy::kInternal8KiBRAMName));
         upperInternalMem_ = reinterpret_cast<Memory<MemoryType::ReadWrite>*>(
-            system_->GetComponent("UpperInternalRAM"));
+            system_->GetComponent(emulator::gameboy::kUpperInternalRAMName));
 
         cpu_->SetRegister<CPU::Registers::PC>(0xC000);
 

@@ -58,6 +58,7 @@ public:
     void AddComponent(IComponent* component);
     void RemoveComponent(IComponent* component);
     bool RegisterComponentAddressRange(IComponent* component, std::pair<size_t, std::size_t> range) noexcept;
+    bool UpdateComponentAddressRange(IComponent* component, std::pair<size_t, std::size_t> range) noexcept;
 
     void AddMemoryWatchPoint(MemoryWatchAddress) noexcept;
     void RemoveMemoryWatchPoint(MemoryWatchAddress) noexcept;
