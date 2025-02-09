@@ -9,9 +9,6 @@ namespace emulator::debugger {
 
 class Debugger {
 private:
-    std::uint16_t port_;
-    bool onlyLocalhost_;
-
     volatile bool runServerThread_;
     std::thread serverThread_;
 
@@ -19,12 +16,12 @@ private:
     ISystemDebugger* currentDebugger_;
 
 public:
-    Debugger(std::uint16_t port, bool onlyLocalhost = true);
+    Debugger();
     ~Debugger();
 
     ISystemDebugger* GetCurrentDebugger() const { return currentDebugger_; };
 
-    void Start();
+    void StartRemote(std::uint16_t port, bool onlyLocalhost = true);
 
     void RegisterDebugger(ISystemDebugger*) noexcept;
     bool SelectDebugger(std::string name) noexcept;

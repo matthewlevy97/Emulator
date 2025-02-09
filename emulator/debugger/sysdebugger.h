@@ -135,6 +135,10 @@ struct RegisterInfo {
     }
 };
 
+enum class NotificationType {
+    CPU_STEP,
+};
+
 class ISystemDebugger {
 protected:
     std::string name_;
@@ -185,6 +189,10 @@ public:
 
     virtual void ShutdownCPU() noexcept
     {}
+
+    // Function that the emulator systems can call to alert of state changes
+    virtual void Notify(NotificationType type, void*) noexcept
+    {};
 };
 
 

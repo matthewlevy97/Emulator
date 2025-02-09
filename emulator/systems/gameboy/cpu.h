@@ -15,6 +15,8 @@ namespace emulator::gameboy {
 
 class CPU : public emulator::component::CPU {
 public:
+    static constexpr std::size_t TCycleToMCycle = 4;
+
     /*
     Registers:
         Name	Hi	Lo	Full Name

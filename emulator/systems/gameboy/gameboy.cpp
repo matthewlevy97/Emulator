@@ -5,6 +5,7 @@
 
 #include "boot_data.h"
 #include "cpu.h"
+#include "ppu.h"
 #include "debugger.h"
 #include "names.h"
 
@@ -21,7 +22,7 @@ emulator::component::System* CreateSystem()
         "GameBoy",
         4194304, // 4.194304 MHz
         {
-            {emulator::gameboy::kDisplayName, new emulator::component::Display(64, 32)},
+            {emulator::gameboy::kDisplayName, new emulator::gameboy::PPU()},
 
             {emulator::gameboy::kCPUName, cpu},
 

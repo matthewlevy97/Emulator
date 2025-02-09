@@ -8,9 +8,8 @@
 
 namespace emulator::debugger {
 
-Debugger::Debugger(std::uint16_t port, bool onlyLocalhost)
-    : runServerThread_(false), currentDebugger_(nullptr),
-    port_(port), onlyLocalhost_(onlyLocalhost)
+Debugger::Debugger()
+    : runServerThread_(false), currentDebugger_(nullptr)
 {}
 
 Debugger::~Debugger()
@@ -31,12 +30,12 @@ Debugger::~Debugger()
     }
 }
 
-void Debugger::Start()
+void Debugger::StartRemote(std::uint16_t port, bool onlyLocalhost)
 {
     serverThread_ = std::thread{[&, this]() {
         runServerThread_ = true;
         socket::DebuggerSocketClient* client = nullptr;
-        auto server = socket::DebuggerSocketServer(port_, onlyLocalhost_);
+        auto server = socket::DebuggerSocketServer(port, onlyLocalhost);
 
         while (runServerThread_) {
             if (currentDebugger_ == nullptr) {

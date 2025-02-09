@@ -19,15 +19,6 @@ private:
 public:
     Debugger(emulator::gameboy::CPU* cpu) : cpu_(cpu), system_(nullptr), emulator::debugger::ISystemDebugger("gameboy")
     {
-        cpu->RegisterStepCallback([this]() {
-            if (stepMode_ && --stepCount_ == 0) {
-                if (stepCompleteCallback_) {
-                    stepCompleteCallback_();
-                }
-                stopped_ = true;
-            }
-        });
-
         // TODO: Complete all registers
         kDebugRegisters[0].name = "AF";
         kDebugRegisters[0].altName = "af";
@@ -65,12 +56,34 @@ public:
             value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::AF>();
         } else if (name == "A" || name == "a") {
             value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::A>();
+        } else if (name == "F" || name == "f") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::F>();
+        } else if (name == "BC" || name == "bc") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::BC>();
+        } else if (name == "B" || name == "b") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::B>();
+        } else if (name == "C" || name == "c") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::C>();
+        } else if (name == "DE" || name == "de") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::DE>();
+        } else if (name == "D" || name == "d") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::D>();
+        } else if (name == "E" || name == "e") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::E>();
+        } else if (name == "HL" || name == "hl") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::HL>();
+        } else if (name == "H" || name == "h") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::H>();
+        } else if (name == "L" || name == "l") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::L>();
+        } else if (name == "PC" || name == "pc") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::PC>();
+        } else if (name == "SP" || name == "sp") {
+            value = cpu_->GetRegister<emulator::gameboy::CPU::Registers::SP>();
         } else {
             return false;
         }
         return true;
-
-        // TODO: Repeat for all registers
     }
 
     bool SetRegister(std::string name, std::uint64_t _value) noexcept
@@ -80,6 +93,30 @@ public:
             cpu_->SetRegister<emulator::gameboy::CPU::Registers::AF>(value);
         } else if (name == "A" || name == "a") {
             cpu_->SetRegister<emulator::gameboy::CPU::Registers::A>(value);
+        } else if (name == "F" || name == "f") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::F>(value);
+        } else if (name == "BC" || name == "bc") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::BC>(value);
+        } else if (name == "B" || name == "b") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::B>(value);
+        } else if (name == "C" || name == "c") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::C>(value);
+        } else if (name == "DE" || name == "de") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::DE>(value);
+        } else if (name == "D" || name == "d") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::D>(value);
+        } else if (name == "E" || name == "e") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::E>(value);
+        } else if (name == "HL" || name == "hl") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::HL>(value);
+        } else if (name == "H" || name == "h") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::H>(value);
+        } else if (name == "L" || name == "l") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::L>(value);
+        } else if (name == "PC" || name == "pc") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::PC>(value);
+        } else if (name == "SP" || name == "sp") {
+            cpu_->SetRegister<emulator::gameboy::CPU::Registers::SP>(value);
         } else {
             return false;
         }

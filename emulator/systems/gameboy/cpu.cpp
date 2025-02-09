@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "debugger.h"
 
 #include <components/exceptions/AddressInUse.h>
 
@@ -22,6 +23,14 @@ CPU::~CPU() {}
 
 void CPU::ReceiveTick()
 {
+    // CPU based off M-Cycles which are every 4 T-Cycles
+    static std::size_t TCycles = TCycleToMCycle;
+    if (--TCycles > 0) {
+        return;
+    } else {
+        TCycles = TCycleToMCycle;
+    }
+
     // Pipeline executes fetch on same cycle as end of execute
     // Decode and execute are same cycle(s) on real system
     // Fetch and decode are same cycle(s) when emulating
@@ -36,8 +45,18 @@ void CPU::ReceiveTick()
 
     if (microcodeStackLength_ == 0) {
         // Step to next instruction
-        if (onStepCallback_) {
-            onStepCallback_();
+        auto system = GetSystem();
+        if (system->DebuggerEnabled()) {
+            auto debugger = system->GetDebugger();
+            if (debugger != nullptr) {
+                // Do nothing if debugger has CPU stopped
+                if (debugger->IsStopped()) {
+                    return;
+                }
+
+                // Alert that stepping to next instruction
+                debugger->Notify(emulator::debugger::NotificationType::CPU_STEP, nullptr);
+            }
         }
 
         // Fetch and generate microcode for execution
@@ -64,9 +83,12 @@ void CPU::PushMicrocode(MicroCode code)
 
 void CPU::AttachToBus(component::Bus* bus)
 {
-
-    if (!bus->RegisterComponentAddressRange(this, {0xFF00, 0xFF70})) {
-        throw component::AddressInUse(0xFF00, 0x70);
+    if (!bus->RegisterComponentAddressRange(this, {0xFF00, 0xFF40})) {
+        throw component::AddressInUse(0xFF00, 0x40);
+    }
+    // Skip PPU controlled registers
+    if (!bus->RegisterComponentAddressRange(this, {0xFF50, 0xFF70})) {
+        throw component::AddressInUse(0xFF50, 0x20);
     }
     bus_ = bus;
 }

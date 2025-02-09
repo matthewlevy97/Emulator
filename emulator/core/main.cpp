@@ -23,12 +23,12 @@ static emulator::component::System* GetSystem(emulator::core::EmulatorManager* m
     system->PowerOn();
 
     auto sysDebugger = system->GetDebugger();
-    if (enableDebugger && sysDebugger != nullptr) {
+    if (sysDebugger != nullptr) {
         auto& debugger = manager->GetDebugger();
         debugger.RegisterDebugger(sysDebugger);
         debugger.SelectDebugger(sysDebugger->GetName());
-        system->UseDebugger(true);
-        spdlog::info("Registed {} for remote debugging", sysDebugger->GetName());
+        system->UseDebugger(enableDebugger);
+        spdlog::info("Registed debugger for {}", sysDebugger->GetName());
     }
 
     return system;

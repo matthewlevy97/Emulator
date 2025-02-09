@@ -1,8 +1,4 @@
 Finish Important Opcodes
-Start Chip-8 Interpreter (35 Opcodes)
-
-Start architecture design for GPU and display screen
-    - New Graphics component (screen size, memory of RGBA pixels)
 
 GameBoy Opcodes
 0x10

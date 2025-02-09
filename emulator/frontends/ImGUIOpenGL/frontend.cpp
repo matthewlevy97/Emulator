@@ -78,7 +78,7 @@ void ImGuiFrontend::Run()
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Update window size
-    ScaleSystemDisplay(10);
+    ScaleSystemDisplay(5);
 
     while (systemStatus_ == emulator::component::SystemStatus::RUNNING) {
         SDL_Event event;
@@ -143,7 +143,7 @@ void ImGuiFrontend::Run()
 
             if (menuBarHeight_ == 0) {
                 menuBarHeight_ = ImGui::GetWindowHeight();
-                ScaleSystemDisplay(10);
+                ScaleSystemDisplay(5);
             }
 
             ImGui::EndMainMenuBar();

@@ -17,7 +17,7 @@
 
 namespace emulator::core {
 
-EmulatorManager::EmulatorManager(std::uint16_t debuggerPort) : debugger_(debuggerPort, true)
+EmulatorManager::EmulatorManager() noexcept
 {}
 
 EmulatorManager::~EmulatorManager() noexcept

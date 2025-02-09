@@ -25,7 +25,7 @@ private:
     emulator::debugger::Debugger debugger_;
 
 public:
-    EmulatorManager(std::uint16_t debuggerPort = 1234);
+    EmulatorManager() noexcept;
     ~EmulatorManager() noexcept;
 
     bool LoadEmulator(std::string name) noexcept;
