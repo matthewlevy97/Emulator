@@ -44,6 +44,8 @@ private:
 
     emulator::component::System* system_{nullptr};
 
+    bool powered_{false};
+
 public:
     Bus();
     ~Bus();
@@ -64,7 +66,7 @@ public:
     void RemoveMemoryWatchPoint(MemoryWatchAddress) noexcept;
     void RegisterMemoryWatchCallback(MemoryWatchCallback) noexcept;
 
-    void ReceiveTick();
+    bool ReceiveTick();
 
     void PowerOn() noexcept;
     void PowerOff() noexcept;

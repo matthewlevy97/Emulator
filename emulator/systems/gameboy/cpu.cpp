@@ -2,6 +2,7 @@
 #include "debugger.h"
 
 #include <components/exceptions/AddressInUse.h>
+#include <components/memory.h>
 
 #include <spdlog/spdlog.h>
 
@@ -70,7 +71,12 @@ void CPU::ReceiveTick()
 
 void CPU::PowerOn() noexcept {}
 
-void CPU::PowerOff() noexcept {}
+void CPU::PowerOff() noexcept
+{
+    microcodeStackLength_ = 0;
+    microcode_.fill(0);
+    registers_.fill(0);
+}
 
 void CPU::PushMicrocode(MicroCode code)
 {
@@ -100,4 +106,38 @@ void CPU::LogStacktrace() noexcept
     spdlog::debug("[CPU] SP: {:04X}   PC: {:04X}", GetRegister<Registers::SP>(), GetRegister<Registers::PC>());
 }
 
+// Load the first 32KiB of the ROM into the cartridge memory
+void CPU::LoadROM(const char* data, std::size_t size) noexcept
+{
+    if (romData_ != nullptr) {
+        delete romData_;
+        romData_ = nullptr;
+    }
+
+    romData_ = new std::uint8_t[size];
+    romSize_ = size;
+    std::memcpy((void*)romData_, data, size);
+
+    auto cartridge0 = reinterpret_cast<emulator::component::Memory<emulator::component::MemoryType::ReadOnly>*>(
+        GetSystem()->GetComponent(emulator::gameboy::kCartridge0Name));
+    if (cartridge0 != nullptr) {
+        auto loadDataSize = std::min(size, static_cast<std::size_t>(0x4000));
+
+        cartridge0->LoadData(data, loadDataSize);
+        cartridge0->OverwriteContext(1, loadDataSize); // Make Context 1 the actual ROM data
+        cartridge0->RestoreContext(0);                 // Restore Context 0 to boot/startup data
+
+        if (loadDataSize < size) {
+            size -= loadDataSize;
+        }
+    }
+
+    if (size) {
+        auto cartridgeN = reinterpret_cast<emulator::component::Memory<emulator::component::MemoryType::ReadOnly>*>(
+            GetSystem()->GetComponent(emulator::gameboy::kCartridgeSwitchableName));
+        if (cartridgeN != nullptr) {
+            cartridgeN->LoadData(data, std::min(size, static_cast<std::size_t>(0x4000)));
+        }
+    }
+}
 }; // namespace emulator::gameboy

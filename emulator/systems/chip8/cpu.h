@@ -15,6 +15,8 @@ namespace emulator::chip8
 class CPU : public emulator::component::CPU
 {
 public:
+    const static bool kDefaultEnableSysAddrOpcode = false;
+
     constexpr static std::size_t kFontSetBaseAddress = 0x50;
     constexpr static std::size_t kSpriteLength = 5;
 
@@ -32,7 +34,7 @@ private:
 
     bool waitingForKeyChange_{false};
 
-    bool enableSysAddrOpcode_{false}; // 0x0NNN
+    bool enableSysAddrOpcode_{kDefaultEnableSysAddrOpcode}; // 0x0NNN
 
     void Decode8Opcodes(std::uint16_t opcode);
     void DecodeFOpcodes(std::uint16_t opcode);
@@ -47,7 +49,15 @@ public:
     void ReceiveTick() override;
 
     void PowerOn() noexcept override {};
-    void PowerOff() noexcept override {};
+    void PowerOff() noexcept override {
+        registers_.fill(0);
+        I_ = 0;
+        pc_ = 0;
+        sp_ = 0;
+        stack_.fill(0);
+        waitingForKeyChange_ = false;
+        enableSysAddrOpcode_ = kDefaultEnableSysAddrOpcode;
+    };
 
     void LogStacktrace() noexcept override;
 

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 #include <string>
+#include <unordered_map>
 
 #include <spdlog/spdlog.h>
 
@@ -19,6 +21,13 @@ enum class SystemStatus {
     HALTED,
 };
 
+struct FrontendInterface {
+    std::function<void()> RestartSystem;
+    std::function<void(std::string)> Log;
+};
+
+using FrontendFunction = std::function<void(FrontendInterface&)>;
+
 class System
 {
 private:
@@ -30,6 +39,8 @@ private:
 
     bool enableDebugging_{false};
     emulator::debugger::ISystemDebugger* debugger_;
+
+    std::unordered_map<std::string, FrontendFunction> frontendFunctions_;
 
 public:
     System(std::string name, std::uint64_t tickRate,
@@ -109,8 +120,11 @@ public:
             }
 
             auto start = std::chrono::high_resolution_clock::now();
-            
-            bus_.ReceiveTick();
+
+            // Fails if powered off
+            if (!bus_.ReceiveTick()) {
+                break;
+            }
 
             auto end = std::chrono::high_resolution_clock::now();
             std::chrono::milliseconds elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -148,6 +162,16 @@ public:
     void LogStacktrace() noexcept
     {
         bus_.LogStacktrace();
+    }
+
+    void RegisterFrontendFunction(std::string name, FrontendFunction func) noexcept
+    {
+        frontendFunctions_[name] = func;
+    }
+
+    std::unordered_map<std::string, FrontendFunction> GetFrontendFunctions() const noexcept
+    {
+        return frontendFunctions_;
     }
 };
 

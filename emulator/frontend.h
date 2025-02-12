@@ -26,9 +26,14 @@ public:
     static constexpr const char* kWindowTitle = "Emulator";
 
 protected:
-    emulator::component::SystemStatus systemStatus_{emulator::component::SystemStatus::RUNNING};
+    emulator::component::SystemStatus systemStatus_{emulator::component::SystemStatus::HALTED};
     emulator::component::System* system_;
     std::thread systemThread_;
+
+    emulator::component::FrontendInterface frontendInterface_ = {
+        .RestartSystem = [this]() { StopSystem(); RunSystem(); },
+        .Log = [](std::string message) { spdlog::debug("Frontend: {}", message); },
+    };
 
     emulator::component::Display* display_{nullptr};
     std::vector<emulator::component::Input*> inputs_;
@@ -38,9 +43,16 @@ protected:
 protected:
     void RunSystem()
     {
+        if (systemStatus_ == emulator::component::SystemStatus::RUNNING) {
+            return;
+        }
+
         systemThread_ = std::thread([this]() {
             try {
+                system_->PowerOn();
+                systemStatus_ = emulator::component::SystemStatus::RUNNING;
                 system_->Run(systemStatus_);
+                system_->PowerOff();
                 spdlog::info("Emulator {} exited", system_->Name());
             } catch (const std::exception& e) {
                 spdlog::error("Emulator {} exited with exception: {}", system_->Name(), e.what());

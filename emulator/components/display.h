@@ -60,6 +60,7 @@ public:
 
     void PowerOff() noexcept override
     {
+        pixels_.clear();
     }
 
     std::size_t GetWidth() const noexcept

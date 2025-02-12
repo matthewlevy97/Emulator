@@ -80,17 +80,20 @@ void ImGuiFrontend::Run()
     // Update window size
     ScaleSystemDisplay(5);
 
-    while (systemStatus_ == emulator::component::SystemStatus::RUNNING) {
+    bool running = true;
+    while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
             switch (event.type) {
             case SDL_EVENT_QUIT:
                 systemStatus_ = emulator::component::SystemStatus::STOPPING;
+                running = false;
                 break;
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
                 if (event.window.windowID == SDL_GetWindowID(window)) {
                     systemStatus_ = emulator::component::SystemStatus::STOPPING;
+                    running = false;
                 }
                 break;
             case SDL_EVENT_KEY_DOWN:
@@ -134,10 +137,20 @@ void ImGuiFrontend::Run()
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Emulator")) {
                 // Emulator settings
+                if (ImGui::MenuItem("Power Off")) {
+                    StopSystem();
+                }
+                if (ImGui::MenuItem("Power On")) {
+                    RunSystem();
+                }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu(system_->Name().c_str())) {
-                // TODO: System specific settings
+                for (const auto& [name, function] : system_->GetFrontendFunctions()) {
+                    if (ImGui::MenuItem(name.c_str())) {
+                        function(frontendInterface_);
+                    }
+                }
                 ImGui::EndMenu();
             }
 

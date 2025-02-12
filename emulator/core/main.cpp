@@ -20,8 +20,6 @@ static emulator::component::System* GetSystem(emulator::core::EmulatorManager* m
     }
     auto system = createSystem();
 
-    system->PowerOn();
-
     auto sysDebugger = system->GetDebugger();
     if (sysDebugger != nullptr) {
         auto& debugger = manager->GetDebugger();

@@ -121,15 +121,21 @@ void Bus::RegisterMemoryWatchCallback(MemoryWatchCallback callback) noexcept
     memoryWatchCallback_ = callback;
 }
 
-void Bus::ReceiveTick()
+bool Bus::ReceiveTick()
 {
+    if (!powered_) [[unlikely]] {
+        return false;
+    }
+
     for (auto component : components_) {
         component->ReceiveTick();
     }
+    return true;
 }
 
 void Bus::PowerOn() noexcept
 {
+    powered_ = true;
     for (auto component : components_) {
         component->PowerOn();
     }
@@ -140,6 +146,7 @@ void Bus::PowerOff() noexcept
     for (auto component : components_) {
         component->PowerOff();
     }
+    powered_ = false;
 }
 
 void Bus::LogStacktrace() noexcept

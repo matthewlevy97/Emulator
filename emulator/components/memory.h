@@ -96,10 +96,31 @@ public:
             return ContextID(-1);
         }
 
-        void* data = std::malloc(size);
+        void* data = new std::uint8_t[size];
         std::memcpy(data, memory_.data() + offset, size);
         contexts_.emplace_back(offset, size, data);
         return ContextID(contexts_.size() - 1);
+    }
+
+    ContextID OverwriteContext(ContextID id, std::size_t size, std::size_t offset = 0) noexcept
+    {
+        if (offset + size > memory_.size()) {
+            return ContextID(-1);
+        }
+
+        if (id >= contexts_.size()) {
+            return SaveContext(size, offset);
+        }
+
+        if (contexts_[id].data != nullptr) {
+            delete contexts_[id].data;
+            contexts_[id].data = nullptr;
+        }
+
+        void* data = new std::uint8_t[size];
+        std::memcpy(data, memory_.data() + offset, size);
+        contexts_[id] = {offset, size, data};
+        return id;
     }
 
     bool RestoreContext(ContextID id) noexcept
@@ -109,6 +130,10 @@ public:
         }
 
         auto& context = contexts_[id];
+        if (context.data == nullptr) {
+            return false;
+        }
+
         std::memcpy(memory_.data() + context.offset, context.data, context.size);
         return true;
     }
@@ -124,7 +149,10 @@ public:
     void ReceiveTick() override {};
 
     void PowerOn() noexcept override {};
-    void PowerOff() noexcept override {};
+    void PowerOff() noexcept override {
+        memory_.clear();
+        contexts_.clear();
+    };
 
     void WriteUInt8(std::size_t address, std::uint8_t value) override
     {

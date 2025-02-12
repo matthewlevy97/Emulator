@@ -1,3 +1,7 @@
+Setup and get gprof: Need to improve a lot of code to eventually support GBA
+
+Power Off should flush everything back to default values
+
 Finish Important Opcodes
 
 GameBoy Opcodes
