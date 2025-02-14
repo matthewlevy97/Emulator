@@ -6,9 +6,11 @@
 #include <functional>
 #include <iostream>
 
-namespace emulator::component {
-    
-class CPU : public IComponent {
+namespace emulator::component
+{
+
+class CPU : public IComponent
+{
 protected:
     System* GetSystem() noexcept
     {

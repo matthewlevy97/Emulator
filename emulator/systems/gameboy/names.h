@@ -1,6 +1,7 @@
 #pragma once
 
-namespace emulator::gameboy {
+namespace emulator::gameboy
+{
 
 static constexpr const char* kDisplayName = "Display";
 static constexpr const char* kCPUName = "CPU";

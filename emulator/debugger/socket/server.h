@@ -1,13 +1,15 @@
 #pragma once
 
-#include "socket_internal.h"
 #include "client.h"
+#include "socket_internal.h"
 
 #include <stdexcept>
 
-namespace emulator::debugger::socket {
+namespace emulator::debugger::socket
+{
 
-class DebuggerSocketServer {
+class DebuggerSocketServer
+{
 private:
     struct timeval timeout_;
     SOCKET server_;

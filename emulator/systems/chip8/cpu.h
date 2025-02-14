@@ -49,7 +49,8 @@ public:
     void ReceiveTick() override;
 
     void PowerOn() noexcept override {};
-    void PowerOff() noexcept override {
+    void PowerOff() noexcept override
+    {
         registers_.fill(0);
         I_ = 0;
         pc_ = 0;

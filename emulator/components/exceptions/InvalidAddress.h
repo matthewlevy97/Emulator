@@ -5,9 +5,11 @@
 #include <format>
 #include <string>
 
-namespace emulator::component {
+namespace emulator::component
+{
 
-class InvalidAddress : public std::exception {
+class InvalidAddress : public std::exception
+{
 public:
     enum class AccessType {
         UNKNOWN,

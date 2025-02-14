@@ -1,6 +1,6 @@
 #pragma once
-#include <spdlog/spdlog.h>
 #include <functional>
+#include <spdlog/spdlog.h>
 #include <unordered_map>
 
 #include "component.h"

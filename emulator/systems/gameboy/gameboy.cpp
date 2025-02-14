@@ -6,9 +6,9 @@
 #include <emulator.h>
 
 #include "cpu.h"
-#include "ppu.h"
 #include "debugger.h"
 #include "names.h"
+#include "ppu.h"
 
 emulator::component::System* CreateSystem()
 {

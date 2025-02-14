@@ -4,11 +4,13 @@
 
 #include "exceptions/InvalidAddress.h"
 
-namespace emulator::component {
+namespace emulator::component
+{
 
 class Bus;
 
-class IComponent {
+class IComponent
+{
 public:
     enum class ComponentType {
         CPU,
@@ -23,8 +25,8 @@ public:
 protected:
     ComponentType type_{ComponentType::Other};
 
-    Bus *bus_;
-    Bus *GetBus() const { return bus_; }
+    Bus* bus_;
+    Bus* GetBus() const { return bus_; }
 
     std::size_t baseAddress_{0}, boundAddress_{0};
 
@@ -57,7 +59,7 @@ public:
     virtual void PowerOn() noexcept = 0;
     virtual void PowerOff() noexcept = 0;
 
-    virtual void AttachToBus(Bus *bus)
+    virtual void AttachToBus(Bus* bus)
     {
         bus_ = bus;
     }
@@ -68,24 +70,27 @@ public:
     }
 
     virtual void LogStacktrace() noexcept
-    {}
+    {
+    }
 
     //
     // Read and Write Interfaces
     //
 
-    #define RW_STR_TYPE_NAME(x) #x
-    #define READ_FUNC_DECL(TypeName, type) \
-        virtual type Read ## TypeName (std::size_t address) { \
-            throw std::runtime_error("Read" RW_STR_TYPE_NAME(TypeName) " not implemented"); \
-        }
-    #define WRITE_FUNC_DECL(TypeName, type) \
-        virtual void Write ## TypeName (std::size_t address, type value) { \
-            throw std::runtime_error("Write" RW_STR_TYPE_NAME(TypeName) " not implemented"); \
-        }
-    #define READ_WRITE_FUNC_DECL(TypeName, type) \
-        READ_FUNC_DECL(TypeName, type) \
-        WRITE_FUNC_DECL(TypeName, type)
+#define RW_STR_TYPE_NAME(x) #x
+#define READ_FUNC_DECL(TypeName, type)                                                  \
+    virtual type Read##TypeName(std::size_t address)                                    \
+    {                                                                                   \
+        throw std::runtime_error("Read" RW_STR_TYPE_NAME(TypeName) " not implemented"); \
+    }
+#define WRITE_FUNC_DECL(TypeName, type)                                                  \
+    virtual void Write##TypeName(std::size_t address, type value)                        \
+    {                                                                                    \
+        throw std::runtime_error("Write" RW_STR_TYPE_NAME(TypeName) " not implemented"); \
+    }
+#define READ_WRITE_FUNC_DECL(TypeName, type) \
+    READ_FUNC_DECL(TypeName, type)           \
+    WRITE_FUNC_DECL(TypeName, type)
 
     READ_WRITE_FUNC_DECL(Float, float);
 
@@ -98,10 +103,10 @@ public:
     READ_WRITE_FUNC_DECL(Int32, std::int32_t);
     READ_WRITE_FUNC_DECL(UInt32, std::uint32_t);
 
-    #undef RW_STR_TYPE_NAME
-    #undef READ_FUNC_DECL
-    #undef WRITE_FUNC_DECL
-    #undef READ_WRITE_FUNC_DECL
+#undef RW_STR_TYPE_NAME
+#undef READ_FUNC_DECL
+#undef WRITE_FUNC_DECL
+#undef READ_WRITE_FUNC_DECL
 
     //
     // End of Read and Write Interfaces

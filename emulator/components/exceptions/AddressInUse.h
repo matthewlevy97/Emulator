@@ -4,9 +4,11 @@
 #include <format>
 #include <string>
 
-namespace emulator::component {
+namespace emulator::component
+{
 
-class AddressInUse : public std::exception {
+class AddressInUse : public std::exception
+{
 private:
     std::uint64_t address_;
     std::size_t length_;

@@ -58,7 +58,7 @@ void PPU::handleOAM()
 void PPU::handlePixelTransfer()
 {
     // TODO: Determine if Background or Window is being rendered
-    
+
     // Handle Background FIFO
     handlePixelTransferBackground();
 

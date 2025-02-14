@@ -2,8 +2,8 @@
 
 namespace emulator::frontend
 {
-    IFrontend* CreateFrontend(emulator::core::EmulatorManager* manager)
-    {
-        return new emulator::frontend::imgui_opengl::ImGuiFrontend(manager);
-    }
+IFrontend* CreateFrontend(emulator::core::EmulatorManager* manager)
+{
+    return new emulator::frontend::imgui_opengl::ImGuiFrontend(manager);
+}
 };

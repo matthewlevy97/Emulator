@@ -3,9 +3,11 @@
 #include "socket_internal.h"
 #include <cstddef>
 
-namespace emulator::debugger::socket {
+namespace emulator::debugger::socket
+{
 
-class DebuggerSocketClient {
+class DebuggerSocketClient
+{
 private:
     struct timeval timeout_;
     SOCKET client_;

@@ -4,52 +4,53 @@
 #include <cstring>
 #include <string>
 
-namespace emulator::debugger::socket::internal {
+namespace emulator::debugger::socket::internal
+{
 
 #if defined(_WIN32) || defined(_WIN64)
-    std::atomic<int> netRefCount;
+std::atomic<int> netRefCount;
 
-    bool InitNetworking() noexcept
-    {
-        if (netRefCount.fetch_add(1, std::memory_order_seq_cst) > 1) {
-            return true;
-        }
-
-        WSADATA wsaData;
-        if (WSAStartup(0x0202, &wsaData) != 0) {
-            netRefCount -= 1;
-            return false;
-        }
-
+bool InitNetworking() noexcept
+{
+    if (netRefCount.fetch_add(1, std::memory_order_seq_cst) > 1) {
         return true;
     }
 
-    void DeinitNetworking() noexcept
-    {
-        if (netRefCount.fetch_sub(1, std::memory_order_seq_cst) == 1) {
-            WSACleanup();
-        }
+    WSADATA wsaData;
+    if (WSAStartup(0x0202, &wsaData) != 0) {
+        netRefCount -= 1;
+        return false;
     }
+
+    return true;
+}
+
+void DeinitNetworking() noexcept
+{
+    if (netRefCount.fetch_sub(1, std::memory_order_seq_cst) == 1) {
+        WSACleanup();
+    }
+}
 #else
-    bool InitNetworking() noexcept { return true; }
-    void DeinitNetworking() noexcept {}
+bool InitNetworking() noexcept { return true; }
+void DeinitNetworking() noexcept {}
 #endif
 
 SOCKET CreateServerSocket(std::uint16_t port, bool localhost, int listenConns) noexcept
 {
     struct addrinfo hints, *res;
 
-    std::memset(&hints, 0, sizeof(hints)); 
+    std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
 
     std::string portStr = std::to_string(port);
     if (getaddrinfo(
-        localhost ? "127.0.0.1" : "0.0.0.0",
-        portStr.c_str(),
-        &hints,
-        &res) != 0) {
+            localhost ? "127.0.0.1" : "0.0.0.0",
+            portStr.c_str(),
+            &hints,
+            &res) != 0) {
         return SOCKET_ERROR;
     }
 

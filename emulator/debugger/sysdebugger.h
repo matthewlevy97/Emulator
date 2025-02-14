@@ -5,7 +5,8 @@
 #include <functional>
 #include <string>
 
-namespace emulator::debugger {
+namespace emulator::debugger
+{
 
 static constexpr int kSIGTRAP = 5;
 
@@ -51,14 +52,14 @@ struct RegisterInfo {
     std::string group;
 
     RegisterInfo() : name(""), altName(""),
-        encoding(RegisterInfoEncoding::UINT), format(RegisterInfoFormat::HEX),
-        bitSize(32), offset(0), group(""), generic(RegisterInfoGenericType::NONE)
-    {}
+                     encoding(RegisterInfoEncoding::UINT), format(RegisterInfoFormat::HEX),
+                     bitSize(32), offset(0), group(""), generic(RegisterInfoGenericType::NONE)
+    {
+    }
 
     std::string Generic() const
     {
-        switch (generic)
-        {
+        switch (generic) {
         case RegisterInfoGenericType::NONE:
             return "";
         case RegisterInfoGenericType::PROGRAM_COUNTER:
@@ -93,8 +94,7 @@ struct RegisterInfo {
 
     std::string Encoding() const
     {
-        switch (encoding)
-        {
+        switch (encoding) {
         case RegisterInfoEncoding::UINT:
             return "uint";
         case RegisterInfoEncoding::SINT:
@@ -107,8 +107,7 @@ struct RegisterInfo {
 
     std::string Format() const
     {
-        switch (format)
-        {
+        switch (format) {
         case RegisterInfoFormat::BINARY:
             return "binary";
         case RegisterInfoFormat::DECIMAL:
@@ -124,8 +123,7 @@ struct RegisterInfo {
     std::string ToString() const
     {
         auto ret = std::format("name:{};alt-name:{};bitsize:{};offset:{};encoding:{};format:{};set:{}",
-            name, altName, bitSize, offset, Encoding(), Format(), group
-        );
+                               name, altName, bitSize, offset, Encoding(), Format(), group);
 
         if (generic != RegisterInfoGenericType::NONE) {
             ret += std::format(";generic:{}", Generic());
@@ -139,7 +137,8 @@ enum class NotificationType {
     CPU_STEP,
 };
 
-class ISystemDebugger {
+class ISystemDebugger
+{
 protected:
     std::string name_;
 
@@ -151,7 +150,8 @@ protected:
 
 public:
     ISystemDebugger(std::string name) : name_(name)
-    {}
+    {
+    }
 
     virtual ~ISystemDebugger() = default;
 
@@ -188,12 +188,11 @@ public:
     }
 
     virtual void ShutdownCPU() noexcept
-    {}
+    {
+    }
 
     // Function that the emulator systems can call to alert of state changes
-    virtual void Notify(NotificationType type, void*) noexcept
-    {};
+    virtual void Notify(NotificationType type, void*) noexcept {};
 };
-
 
 }; // namespace emulator::debugger

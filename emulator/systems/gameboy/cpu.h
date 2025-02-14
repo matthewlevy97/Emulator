@@ -11,9 +11,11 @@
 
 #include "names.h"
 
-namespace emulator::gameboy {
+namespace emulator::gameboy
+{
 
-class CPU : public emulator::component::CPU {
+class CPU : public emulator::component::CPU
+{
 public:
     static constexpr std::size_t TCycleToMCycle = 4;
 
@@ -59,7 +61,7 @@ public:
         C
     };
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline std::uint16_t GetRegister()
     {
         if constexpr (Reg == Registers::AF) {
@@ -95,7 +97,7 @@ public:
         }
     }
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline void SetRegister(std::uint16_t value)
     {
         if constexpr (Reg == Registers::AF) {
@@ -131,7 +133,7 @@ public:
         }
     }
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline void AddRegister(std::uint16_t value)
     {
         if constexpr (Reg == Registers::AF) {
@@ -165,7 +167,7 @@ public:
         }
     }
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline void SubRegister(std::uint16_t value)
     {
         if constexpr (Reg == Registers::AF) {
@@ -199,7 +201,7 @@ public:
         }
     }
 
-    template<Flags Flag>
+    template <Flags Flag>
     inline bool GetFlag()
     {
         if constexpr (Flag == Flags::Z) {
@@ -215,7 +217,7 @@ public:
         }
     }
 
-    template<Flags Flag>
+    template <Flags Flag>
     inline void SetFlag(bool value)
     {
         std::uint16_t mask;
@@ -263,7 +265,7 @@ private:
                 int carry = (val >> 7) & 0x1;
 
                 val = (val << 1) | carry;
-                
+
                 cpu->SetRegister<reg>(val);
                 cpu->SetFlag<Flags::Z>(val == 0);
                 cpu->SetFlag<Flags::H>(false);

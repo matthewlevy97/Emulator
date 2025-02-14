@@ -5,9 +5,11 @@
 #include <thread>
 #include <vector>
 
-namespace emulator::debugger {
+namespace emulator::debugger
+{
 
-class Debugger {
+class Debugger
+{
 private:
     volatile bool runServerThread_;
     std::thread serverThread_;

@@ -1732,7 +1732,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHC(a, other));
         });
         break;
-    
+
     // SUB A, B
     case 0x90:
         // 4 Cycles
@@ -1764,7 +1764,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHCSub(a, other));
         });
         break;
-    
+
     // SUB A, D
     case 0x92:
         // 4 Cycles
@@ -1780,7 +1780,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHCSub(a, other));
         });
         break;
-    
+
     // SUB A, E
     case 0x93:
         // 4 Cycles
@@ -1796,7 +1796,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHCSub(a, other));
         });
         break;
-    
+
     // SUB A, H
     case 0x94:
         // 4 Cycles
@@ -1812,7 +1812,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHCSub(a, other));
         });
         break;
-    
+
     // SUB A, L
     case 0x95:
         // 4 Cycles
@@ -1828,7 +1828,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(IsHCSub(a, other));
         });
         break;
-    
+
     // SUB A, A
     case 0x97:
         // 4 Cycles
@@ -1855,7 +1855,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(true);
         });
         break;
-    
+
     // AND A, C
     case 0xA1:
         // 4 Cycles
@@ -1870,7 +1870,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(true);
         });
         break;
-    
+
     // AND A, D
     case 0xA2:
         // 4 Cycles
@@ -1885,7 +1885,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(true);
         });
         break;
-    
+
     // AND A, E
     case 0xA3:
         // 4 Cycles
@@ -1900,7 +1900,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(true);
         });
         break;
-    
+
     // AND A, H
     case 0xA4:
         // 4 Cycles
@@ -1915,7 +1915,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(true);
         });
         break;
-    
+
     // AND A, L
     case 0xA5:
         // 4 Cycles
@@ -1930,7 +1930,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(true);
         });
         break;
-    
+
     // AND A, A
     case 0xA7:
         // 4 Cycles
@@ -2083,7 +2083,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::H>(false);
         });
         break;
-    
+
     // OR A, C
     case 0xB1:
         // 4 Cycles
@@ -2272,7 +2272,7 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::C>(a < other);
         });
         break;
-    
+
     // CP A, (HL)
     case 0xBE:
         // 8 Cycles

@@ -2,8 +2,8 @@
 
 #include "emumanager.h"
 
-#include <frontend.h>
 #include <debugger/debugger.h>
+#include <frontend.h>
 
 static const std::array<std::string, 2> emulators = {
     "chip8",
