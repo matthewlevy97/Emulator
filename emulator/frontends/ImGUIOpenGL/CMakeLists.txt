@@ -7,6 +7,7 @@ if (TARGET_FRONTEND STREQUAL "Desktop")
             ${CMAKE_CURRENT_SOURCE_DIR}/frontend.cpp
     )
     UseVendor_ImGUISDL(${EMULATOR_NAME})
+    UseFileDialog(${EMULATOR_NAME})
 
     find_package(OpenGL REQUIRED)
     target_link_libraries(${EMULATOR_NAME}

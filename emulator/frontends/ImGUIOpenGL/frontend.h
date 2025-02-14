@@ -11,8 +11,10 @@ private:
     void *window_;
     std::size_t menuBarHeight_{0};
 
+    std::uint64_t targetFPS_{60};
+
 public:
-    ImGuiFrontend(emulator::component::System* system) : emulator::frontend::IFrontend(system) {}
+    ImGuiFrontend(emulator::core::EmulatorManager* manager);
 
     bool Initialize() noexcept override;
     void Run() override;

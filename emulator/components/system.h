@@ -22,7 +22,8 @@ enum class SystemStatus {
 };
 
 struct FrontendInterface {
-    std::function<void()> RestartSystem;
+    std::function<std::string()> OpenFileDialog;
+    std::function<void(std::function<void()>)> RestartSystem;
     std::function<void(std::string)> Log;
 };
 
@@ -113,27 +114,45 @@ public:
 
     void Run(volatile SystemStatus& status)
     {
-        std::chrono::milliseconds interval(1000 / tickRate_);
+        static constexpr int kTickRecalculateInterval = 1000;
+
+        auto tickCounter = kTickRecalculateInterval;
+        auto interval = std::chrono::nanoseconds(1000000000 / tickRate_).count();
+
+        // Purposefully not in nanoseconds to prevent average at a 0 delay
+        auto sleepTime = std::chrono::microseconds(0);
+
+        auto start = std::chrono::high_resolution_clock::now();
         while (status == SystemStatus::RUNNING) {
             if (enableDebugging_ && debugger_ != nullptr && debugger_->IsStopped()) {
                 continue;
             }
 
-            auto start = std::chrono::high_resolution_clock::now();
+            if (tickCounter >= kTickRecalculateInterval) {
+                start = std::chrono::high_resolution_clock::now();
+            }
 
             // Fails if powered off
             if (!bus_.ReceiveTick()) {
                 break;
             }
 
-            auto end = std::chrono::high_resolution_clock::now();
-            std::chrono::milliseconds elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            if (elapsed <= interval) {
-                std::this_thread::sleep_for(interval - elapsed);
-            } else {
-                elapsed -= interval;
-                spdlog::trace("Tick took {} ms too long", elapsed.count());
+            // Average the tick rate to minimize spin calls
+            // Higher values for kTickRecalculateInterval can result in longer stutters
+            if (--tickCounter == 0) {
+                tickCounter = kTickRecalculateInterval;
+                auto elapsedAverage = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::high_resolution_clock::now() - start).count() / kTickRecalculateInterval;
+                if (elapsedAverage <= interval) {
+                    // We are running too fast, slow down
+                    sleepTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(interval - elapsedAverage));
+                } else {
+                    // We are running too slow, speed up
+                    sleepTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(elapsedAverage - interval));
+                }
             }
+
+            std::this_thread::sleep_for(sleepTime);
         }
         status = SystemStatus::HALTED;
     }

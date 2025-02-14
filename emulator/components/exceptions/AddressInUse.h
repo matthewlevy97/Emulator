@@ -15,7 +15,7 @@ private:
 public:
     AddressInUse(std::uint64_t address, std::size_t length) : address_(address), length_(length)
     {
-        msg_ = std::format("Address already in use: {} -> {}", address, address + length);
+        msg_ = std::format("Address already in use: 0x{:04X} -> 0x{:04X}", address, address + length);
     }
 
     const std::uint64_t Address() const noexcept

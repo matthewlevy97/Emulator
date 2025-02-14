@@ -1,5 +1,7 @@
 #include "frontend.h"
 
+#include "filedialog/filedialog.h"
+
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
@@ -14,6 +16,16 @@
 
 namespace emulator::frontend::imgui_opengl
 {
+
+ImGuiFrontend::ImGuiFrontend(emulator::core::EmulatorManager* manager) : emulator::frontend::IFrontend(manager)
+{
+    frontendInterface_.OpenFileDialog = [this]() -> std::string {
+        auto fd = FileDialog("", {{"Chip8", {"c8", "ch8"}},
+                                  {"GameBoy", {"gb"}},
+                                  {"GameBoy Color", {"gb", "gbc"}}});
+        return fd.Open();
+    };
+}
 
 bool ImGuiFrontend::Initialize() noexcept
 {
@@ -61,6 +73,10 @@ void ImGuiFrontend::ScaleSystemDisplay(std::size_t scale) noexcept
 {
     SDL_Window* window = (SDL_Window*)window_;
 
+    if (scale == 0 || display_ == nullptr) {
+        return;
+    }
+
     // Update window size
     display_->SetScale(scale);
     SDL_SetWindowSize(window, (int)display_->GetWidth() * scale, (int)display_->GetHeight() * scale + menuBarHeight_);
@@ -68,20 +84,16 @@ void ImGuiFrontend::ScaleSystemDisplay(std::size_t scale) noexcept
 
 void ImGuiFrontend::Run()
 {
-    // Run the emulator in new thread
-    RunSystem();
-
     SDL_Window* window = (SDL_Window*)window_;
     SDL_Renderer* renderer = SDL_GetRenderer(window);
 
     ImGuiIO& io = ImGui::GetIO();
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    // Update window size
-    ScaleSystemDisplay(5);
-
     bool running = true;
     while (running) {
+        auto startTick = SDL_GetTicks();
+
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
@@ -122,41 +134,47 @@ void ImGuiFrontend::Run()
         ImGui::ShowDemoWindow();
 #endif
 
-        // Display system screen
-        std::size_t displayWidth, displayHeight;
-        auto pixelData = display_->GetPixelData(displayWidth, displayHeight);
-
-        // Create surface from pixel data
-        SDL_Surface* surface = SDL_CreateSurfaceFrom(displayWidth, displayHeight,
-                                                     SDL_PIXELFORMAT_RGBA8888, pixelData,
-                                                     displayWidth * sizeof(Uint32));
-        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_DestroySurface(surface);
-        delete pixelData;
-
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Emulator")) {
-                // Emulator settings
-                if (ImGui::MenuItem("Power Off")) {
-                    StopSystem();
+                for (const auto& emulatorName : manager_->GetLoadedEmulators()) {
+                    if (ImGui::MenuItem(emulatorName.c_str())) {
+                        LoadSystem(emulatorName);
+                        ScaleSystemDisplay(5);
+                    }
                 }
-                if (ImGui::MenuItem("Power On")) {
-                    RunSystem();
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu(system_->Name().c_str())) {
-                for (const auto& [name, function] : system_->GetFrontendFunctions()) {
-                    if (ImGui::MenuItem(name.c_str())) {
-                        function(frontendInterface_);
+
+                if (system_ != nullptr && display_ != nullptr) {
+                    if (ImGui::MenuItem("Scale +")) {
+                        ScaleSystemDisplay(display_->GetScale() + 1);
+                    }
+                    if (ImGui::MenuItem("Scale -")) {
+                        ScaleSystemDisplay(display_->GetScale() - 1);
+                    }
+
+                    // Emulator power settings
+                    if (ImGui::MenuItem("Power Off")) {
+                        StopSystem();
+                    }
+                    if (ImGui::MenuItem("Power On")) {
+                        RunSystem();
                     }
                 }
                 ImGui::EndMenu();
             }
 
+            if (system_ != nullptr) {
+                if (ImGui::BeginMenu(system_->Name().c_str())) {
+                    for (const auto& [name, function] : system_->GetFrontendFunctions()) {
+                        if (ImGui::MenuItem(name.c_str())) {
+                            function(frontendInterface_);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+
             if (menuBarHeight_ == 0) {
                 menuBarHeight_ = ImGui::GetWindowHeight();
-                ScaleSystemDisplay(5);
             }
 
             ImGui::EndMainMenuBar();
@@ -164,8 +182,24 @@ void ImGuiFrontend::Run()
 
         // Render system display into current window
         static ImVec2 topLeft = ImVec2(0.0f, menuBarHeight_);
-        static ImVec2 bottomRight = ImVec2(float(displayWidth), float(displayHeight) + menuBarHeight_);
-        ImGui::GetBackgroundDrawList()->AddImage((unsigned long long)texture, topLeft, bottomRight);
+
+        SDL_Texture* texture = nullptr;
+        if (display_ != nullptr) {
+            // Display system screen
+            std::size_t displayWidth, displayHeight;
+            auto pixelData = display_->GetPixelData(displayWidth, displayHeight);
+
+            // Create surface from pixel data
+            SDL_Surface* surface = SDL_CreateSurfaceFrom(displayWidth, displayHeight,
+                                                         SDL_PIXELFORMAT_RGBA8888, pixelData,
+                                                         displayWidth * sizeof(Uint32));
+            texture = SDL_CreateTextureFromSurface(renderer, surface);
+            SDL_DestroySurface(surface);
+            delete pixelData;
+
+            ImVec2 bottomRight = ImVec2(float(displayWidth), float(displayHeight) + menuBarHeight_);
+            ImGui::GetBackgroundDrawList()->AddImage((unsigned long long)texture, topLeft, bottomRight);
+        }
 
         // Rendering
         ImGui::Render();
@@ -176,7 +210,15 @@ void ImGuiFrontend::Run()
         SDL_RenderPresent(renderer);
 
         // Cleanup texture
-        SDL_DestroyTexture(texture);
+        if (texture) {
+            SDL_DestroyTexture(texture);
+        }
+
+        // Sleep until next tick
+        auto endTick = SDL_GetTicks();
+        if (endTick - startTick < 1000 / targetFPS_) {
+            SDL_Delay((1000 / targetFPS_) - (endTick - startTick));
+        }
     }
 
     // Stop the emulator if it's still running

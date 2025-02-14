@@ -60,7 +60,7 @@ public:
 
     void PowerOff() noexcept override
     {
-        pixels_.clear();
+        std::fill(pixels_.begin(), pixels_.end(), clearColor_);
     }
 
     std::size_t GetWidth() const noexcept

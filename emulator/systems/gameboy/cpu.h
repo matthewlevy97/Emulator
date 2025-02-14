@@ -245,8 +245,8 @@ private:
 
     std::array<std::uint16_t, 6> registers_;
 
-    const std::uint8_t* romData_;
-    std::size_t romSize_;
+    const std::uint8_t* romData_{nullptr};
+    std::size_t romSize_{0};
 
     void PushMicrocode(MicroCode code);
     void DecodeOpcode(std::uint8_t opcode);
@@ -345,6 +345,7 @@ public:
 
     void LogStacktrace() noexcept override;
 
+    void LoadStartup() noexcept;
     void LoadROM(const char* data, std::size_t size) noexcept;
 
     // NoOp IO Instructions

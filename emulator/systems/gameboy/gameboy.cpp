@@ -1,11 +1,10 @@
+#include <fstream>
+
 #include <components/display.h>
 #include <components/memory.h>
 #include <components/multimappedmemory.h>
 #include <emulator.h>
 
-#include <fstream>
-
-#include "boot_data.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "debugger.h"
@@ -15,12 +14,6 @@ emulator::component::System* CreateSystem()
 {
     auto cpu = new emulator::gameboy::CPU();
     auto debugger = new emulator::gameboy::Debugger(cpu);
-
-    auto cartridge0 = new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0, 0x4000);
-    cartridge0->LoadData((char*)bootData, sizeof(bootData));
-    cartridge0->SaveContext(sizeof(bootData)); // Make Context 0 the boot ROM
-
-    auto cartridgeN = new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0x4000, 0x4000);
 
     // TODO: 1) Load actual ROM here
     // TODO: 2) Add UI option to file picker load ROM
@@ -44,19 +37,31 @@ emulator::component::System* CreateSystem()
             {emulator::gameboy::kUpperInternalRAMName, new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0xFF80, 0x7F)},
 
             // Cartridge ROMs
-            {emulator::gameboy::kCartridgeSwitchableName, cartridgeN},
-            {emulator::gameboy::kCartridge0Name, cartridge0},
+            {emulator::gameboy::kCartridgeSwitchableName, new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0x4000, 0x4000)},
+            {emulator::gameboy::kCartridge0Name, new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0, 0x4000)},
         },
         debugger);
 
     debugger->SetSystem(system);
 
     system->RegisterFrontendFunction("Load ROM", [cpu](emulator::component::FrontendInterface& frontend) {
-        std::ifstream file("tetris.gb", std::ios::binary);
+        auto selectedFile = frontend.OpenFileDialog();
+        if (selectedFile.empty()) {
+            frontend.Log("No file selected");
+            return;
+        }
+
+        std::ifstream file(selectedFile, std::ios::binary);
+        if (file.eof()) {
+            frontend.Log("Failed to open ROM");
+            return;
+        }
         std::vector<char> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        cpu->LoadROM(buffer.data(), buffer.size());
-        
-        frontend.RestartSystem();
+
+        frontend.RestartSystem([cpu, buffer]() {
+            cpu->LoadStartup();
+            cpu->LoadROM(buffer.data(), buffer.size());
+        });
         frontend.Log("Loaded ROM");
     });
 

@@ -150,7 +150,7 @@ public:
 
     void PowerOn() noexcept override {};
     void PowerOff() noexcept override {
-        memory_.clear();
+        std::fill(memory_.begin(), memory_.end(), 0);
         contexts_.clear();
     };
 

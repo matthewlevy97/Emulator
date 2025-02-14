@@ -47,7 +47,7 @@ bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::si
         if (range.first >= addressable.start && range.first < addressable.end) {
             return false;
         }
-        if (range.second >= addressable.start && range.second <= addressable.end) {
+        if (range.second > addressable.start && range.second <= addressable.end) {
             return false;
         }
     }

@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "debugger.h"
+#include "boot_data.h"
 
 #include <components/exceptions/AddressInUse.h>
 #include <components/memory.h>
@@ -25,7 +26,7 @@ CPU::~CPU() {}
 void CPU::ReceiveTick()
 {
     // CPU based off M-Cycles which are every 4 T-Cycles
-    static std::size_t TCycles = TCycleToMCycle;
+    static int TCycles = TCycleToMCycle;
     if (--TCycles > 0) {
         return;
     } else {
@@ -104,6 +105,15 @@ void CPU::LogStacktrace() noexcept
     spdlog::debug("[CPU] AF: {:04X}   BC: {:04X}", GetRegister<Registers::AF>(), GetRegister<Registers::BC>());
     spdlog::debug("[CPU] DE: {:04X}   HL: {:04X}", GetRegister<Registers::DE>(), GetRegister<Registers::HL>());
     spdlog::debug("[CPU] SP: {:04X}   PC: {:04X}", GetRegister<Registers::SP>(), GetRegister<Registers::PC>());
+}
+
+void CPU::LoadStartup() noexcept
+{
+    auto cartridge0 = reinterpret_cast<emulator::component::Memory<emulator::component::MemoryType::ReadOnly>*>(
+        GetSystem()->GetComponent(emulator::gameboy::kCartridge0Name));
+
+        cartridge0->LoadData((char*)bootData, sizeof(bootData));
+    cartridge0->SaveContext(sizeof(bootData)); // Make Context 0 the boot ROM
 }
 
 // Load the first 32KiB of the ROM into the cartridge memory

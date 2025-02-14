@@ -5,6 +5,8 @@
 #include <thread>
 #include <vector>
 
+#include "emumanager.h"
+
 #include <components/display.h>
 #include <components/input.h>
 #include <components/system.h>
@@ -26,13 +28,28 @@ public:
     static constexpr const char* kWindowTitle = "Emulator";
 
 protected:
+    emulator::core::EmulatorManager* manager_;
+
     emulator::component::SystemStatus systemStatus_{emulator::component::SystemStatus::HALTED};
-    emulator::component::System* system_;
+    emulator::component::System* system_{nullptr};
     std::thread systemThread_;
 
     emulator::component::FrontendInterface frontendInterface_ = {
-        .RestartSystem = [this]() { StopSystem(); RunSystem(); },
-        .Log = [](std::string message) { spdlog::debug("Frontend: {}", message); },
+        .OpenFileDialog = []() -> std::string {
+            spdlog::error("OpenFileDialog not implemented");
+            return "";
+        },
+
+        .RestartSystem = [this](std::function<void()> doDuringOff = nullptr) {
+            StopSystem();
+            if (doDuringOff)
+                doDuringOff();
+            RunSystem();
+        },
+
+        .Log = [](std::string message) {
+            spdlog::debug("Frontend: {}", message);
+        },
     };
 
     emulator::component::Display* display_{nullptr};
@@ -43,6 +60,10 @@ protected:
 protected:
     void RunSystem()
     {
+        if (system_ == nullptr) {
+            return;
+        }
+
         if (systemStatus_ == emulator::component::SystemStatus::RUNNING) {
             return;
         }
@@ -71,6 +92,38 @@ protected:
         if (systemThread_.joinable()) {
             systemThread_.join();
         }
+
+        // Probably not needed, but rather ensure its set by this point
+        systemStatus_ = emulator::component::SystemStatus::HALTED;
+    }
+
+    void LoadSystem(const std::string& name, bool enableDebugger = false)
+    {
+        auto system = GetSystem(name, enableDebugger);
+        if (system == nullptr) {
+            return;
+        }
+
+        LoadSystem(system);
+    }
+
+    void LoadSystem(emulator::component::System* system, bool enableDebugger = false)
+    {
+        if (system_ != nullptr) {
+            // Have to handle fact that system may be running
+            StopSystem();
+            delete system_;
+        }
+
+        system_ = system;
+        if (system_ == nullptr) {
+            return;
+        }
+
+        if (!LoadDisplay()) {
+            throw std::runtime_error("Failed to load display component");
+        }
+        LoadInputs();
     }
 
     bool LoadDisplay() noexcept
@@ -93,16 +146,42 @@ protected:
                        });
     }
 
-public:
-    IFrontend(emulator::component::System* system) : system_(system)
+private:
+    emulator::component::System* GetSystem(const std::string& name,
+                                           bool enableDebugger) const noexcept
     {
-        if (system == nullptr) {
-            throw std::invalid_argument("System cannot be null");
+        auto createSystem = manager_->GetSystem(name);
+        if (!createSystem) {
+            spdlog::error("Failed to get system handle for {}", name);
+            return nullptr;
         }
-        if (!LoadDisplay()) {
-            throw std::runtime_error("Failed to load display component");
+
+        emulator::component::System* system = nullptr;
+        try {
+            system = createSystem();
+        } catch (std::exception& e) {
+            spdlog::error("Failed to create system: {}", e.what());
+            return nullptr;
         }
-        LoadInputs();
+
+        auto sysDebugger = system->GetDebugger();
+        if (sysDebugger != nullptr) {
+            auto& debugger = manager_->GetDebugger();
+            debugger.RegisterDebugger(sysDebugger);
+            debugger.SelectDebugger(sysDebugger->GetName());
+            system->UseDebugger(enableDebugger);
+            spdlog::info("Registed debugger for {}", sysDebugger->GetName());
+        }
+
+        return system;
+    }
+
+public:
+    IFrontend(emulator::core::EmulatorManager* manager) : manager_(manager)
+    {
+        if (manager_ == nullptr) {
+            throw std::invalid_argument("Manager cannot be null");
+        }
     }
 
     virtual ~IFrontend() = default;
@@ -114,6 +193,6 @@ public:
     virtual void ScaleSystemDisplay(std::size_t scale) noexcept = 0;
 };
 
-IFrontend* CreateFrontend(emulator::component::System* system);
+IFrontend* CreateFrontend(emulator::core::EmulatorManager* system);
 
 }; // namespace emulator::frontend

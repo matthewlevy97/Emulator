@@ -47,5 +47,28 @@ function(UseVendor_ImGUISDL target_name)
     )
 endfunction()
 
+function(UseFileDialog target_name)
+    if(WIN32)
+        set(PLATFORM_SPECIFIC_SRCS "filedialog_win.cpp")
+    elseif(APPLE)
+        set(PLATFORM_SPECIFIC_SRCS "filedialog_macos.cpp")
+    elseif(UNIX)
+        set(PLATFORM_SPECIFIC_SRCS "filedialog_nix.cpp")
+    else()
+        message(FATAL_ERROR "Unsupported operating system")
+    endif()
+
+    set(FILEDIALOG_DIR "${CMAKE_SOURCE_DIR}/emulator/frontends/filedialog")
+
+    target_sources(${target_name}
+        PRIVATE
+            ${FILEDIALOG_DIR}/${PLATFORM_SPECIFIC_SRCS}
+    )
+    target_include_directories(${target_name}
+        PRIVATE
+            ${FILEDIALOG_DIR}
+    )
+endfunction()
+
 # Frontends
 add_subdirectory(ImGUIOpenGL)
