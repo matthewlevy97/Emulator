@@ -44,6 +44,24 @@ emulator::component::System* CreateSystem()
 
     debugger->SetSystem(system);
 
+    system->RegisterFrontendFunction("Load Startup", [cpu](emulator::component::FrontendInterface& frontend) {
+        auto selectedFile = frontend.OpenFileDialog();
+        if (selectedFile.empty()) {
+            frontend.Log("No file selected");
+            return;
+        }
+
+        std::ifstream file(selectedFile, std::ios::binary);
+        if (file.eof()) {
+            frontend.Log("Failed to open startup code");
+            return;
+        }
+        std::vector<char> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+        cpu->SetStartup(buffer.data(), buffer.size());
+        frontend.Log("Loaded Startup Code");
+    });
+
     system->RegisterFrontendFunction("Load ROM", [cpu](emulator::component::FrontendInterface& frontend) {
         auto selectedFile = frontend.OpenFileDialog();
         if (selectedFile.empty()) {

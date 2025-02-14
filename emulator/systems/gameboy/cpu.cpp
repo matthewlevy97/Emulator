@@ -1,6 +1,5 @@
 #include "cpu.h"
 #include "debugger.h"
-#include "boot_data.h"
 
 #include <components/exceptions/AddressInUse.h>
 #include <components/memory.h>
@@ -107,13 +106,25 @@ void CPU::LogStacktrace() noexcept
     spdlog::debug("[CPU] SP: {:04X}   PC: {:04X}", GetRegister<Registers::SP>(), GetRegister<Registers::PC>());
 }
 
+void CPU::SetStartup(const char* data, std::size_t size) noexcept
+{
+    if (bootData_ != nullptr) {
+        delete bootData_;
+        bootData_ = nullptr;
+    }
+
+    bootData_ = new std::uint8_t[size];
+    std::memcpy((void*)bootData_, data, size);
+    bootSize_ = size;
+}
+
 void CPU::LoadStartup() noexcept
 {
     auto cartridge0 = reinterpret_cast<emulator::component::Memory<emulator::component::MemoryType::ReadOnly>*>(
         GetSystem()->GetComponent(emulator::gameboy::kCartridge0Name));
 
-        cartridge0->LoadData((char*)bootData, sizeof(bootData));
-    cartridge0->SaveContext(sizeof(bootData)); // Make Context 0 the boot ROM
+        cartridge0->LoadData((const char*)bootData_, bootSize_);
+    cartridge0->OverwriteContext(0, bootSize_); // Make Context 0 the boot ROM
 }
 
 // Load the first 32KiB of the ROM into the cartridge memory

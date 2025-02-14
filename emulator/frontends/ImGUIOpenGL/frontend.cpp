@@ -22,7 +22,8 @@ ImGuiFrontend::ImGuiFrontend(emulator::core::EmulatorManager* manager) : emulato
     frontendInterface_.OpenFileDialog = [this]() -> std::string {
         auto fd = FileDialog("", {{"Chip8", {"c8", "ch8"}},
                                   {"GameBoy", {"gb"}},
-                                  {"GameBoy Color", {"gb", "gbc"}}});
+                                  {"GameBoy Color", {"gb", "gbc"}},
+                                  {"All Files", {"*"}}});
         return fd.Open();
     };
 }
@@ -142,15 +143,23 @@ void ImGuiFrontend::Run()
                         ScaleSystemDisplay(5);
                     }
                 }
+                ImGui::EndMenu();
+            }
 
-                if (system_ != nullptr && display_ != nullptr) {
+            if (display_ != nullptr) {
+                if (ImGui::BeginMenu("Display")) {
                     if (ImGui::MenuItem("Scale +")) {
                         ScaleSystemDisplay(display_->GetScale() + 1);
                     }
                     if (ImGui::MenuItem("Scale -")) {
                         ScaleSystemDisplay(display_->GetScale() - 1);
                     }
+                    ImGui::EndMenu();
+                }
+            }
 
+            if (system_ != nullptr) {
+                if (ImGui::BeginMenu(system_->Name().c_str())) {
                     // Emulator power settings
                     if (ImGui::MenuItem("Power Off")) {
                         StopSystem();
@@ -158,12 +167,8 @@ void ImGuiFrontend::Run()
                     if (ImGui::MenuItem("Power On")) {
                         RunSystem();
                     }
-                }
-                ImGui::EndMenu();
-            }
 
-            if (system_ != nullptr) {
-                if (ImGui::BeginMenu(system_->Name().c_str())) {
+                    // Custom system functions
                     for (const auto& [name, function] : system_->GetFrontendFunctions()) {
                         if (ImGui::MenuItem(name.c_str())) {
                             function(frontendInterface_);
