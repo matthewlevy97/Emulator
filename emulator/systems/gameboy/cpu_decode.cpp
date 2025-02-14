@@ -880,6 +880,52 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         PushMicrocode(CycleNoOp);
         break;
 
+    // INC (HL)
+    case 0x34:
+        scratch = new std::uint8_t;
+
+        // 12 Cycles
+        PushMicrocode(CycleNoOp);
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            auto* tmp = reinterpret_cast<std::uint8_t*>(scratch);
+            std::uint8_t value = *tmp + 1;
+
+            bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(), value);
+            cpu->SetFlag<Flags::Z>(value == 0);
+            cpu->SetFlag<Flags::N>(false);
+            cpu->SetFlag<Flags::H>(IsHC(*tmp, 1));
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
+        });
+        break;
+
+    // DEC (HL)
+    case 0x35:
+        scratch = new std::uint8_t;
+
+        // 12 Cycles
+        PushMicrocode(CycleNoOp);
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            auto* tmp = reinterpret_cast<std::uint8_t*>(scratch);
+            std::uint8_t value = *tmp - 1;
+
+            bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(), value);
+            cpu->SetFlag<Flags::Z>(value == 0);
+            cpu->SetFlag<Flags::N>(false);
+            cpu->SetFlag<Flags::H>(IsHCSub(*tmp, 1));
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
+        });
+        break;
+
     // LD (HL), d8
     case 0x36:
         scratch = new std::uint8_t;
@@ -1829,6 +1875,30 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
 
+    // SUB A, (HL)
+    case 0x96:
+        scratch = new std::uint8_t;
+
+        // 8 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto* tmp = reinterpret_cast<std::uint8_t*>(scratch);
+            std::uint8_t value = a - *tmp;
+
+            cpu->SetRegister<Registers::A>(value);
+            cpu->SetFlag<Flags::Z>(value == 0);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::C>(a < *tmp);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, *tmp));
+
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
+        });
+        break;
+
     // SUB A, A
     case 0x97:
         // 4 Cycles
@@ -1928,6 +1998,30 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->SetFlag<Flags::N>(false);
             cpu->SetFlag<Flags::C>(false);
             cpu->SetFlag<Flags::H>(true);
+        });
+        break;
+
+    // AND A, (HL)
+    case 0xA6:
+        scratch = new std::uint8_t;
+
+        // 8 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+            auto* tmp = reinterpret_cast<std::uint8_t*>(scratch);
+            std::uint8_t value = a & *tmp;
+
+            cpu->SetRegister<Registers::A>(value);
+            cpu->SetFlag<Flags::Z>(value == 0);
+            cpu->SetFlag<Flags::N>(false);
+            cpu->SetFlag<Flags::C>(false);
+            cpu->SetFlag<Flags::H>(true);
+
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::HL>());
         });
         break;
 
@@ -2507,6 +2601,32 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
 
+    // ADD A, u8
+    case 0xC6:
+        scratch = new std::uint8_t;
+
+        // 8 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+
+            auto tmp = static_cast<std::uint8_t*>(scratch);
+            std::uint8_t value = a + *tmp;
+
+            cpu->SetRegister<Registers::A>(value);
+            cpu->SetFlag<Flags::Z>(value == 0);
+            cpu->SetFlag<Flags::N>(false);
+            cpu->SetFlag<Flags::C>(value < a);
+            cpu->SetFlag<Flags::H>(IsHC(a, *tmp));
+
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+
     // RET Z
     case 0xC8:
         scratch = new std::uint16_t;
@@ -2885,6 +3005,32 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         break;
 
+    // SUB A, u8
+    case 0xD6:
+        scratch = new std::uint8_t;
+
+        // 8 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+
+            auto tmp = static_cast<std::uint8_t*>(scratch);
+            std::uint8_t value = a - *tmp;
+
+            cpu->SetRegister<Registers::A>(value);
+            cpu->SetFlag<Flags::Z>(value == 0);
+            cpu->SetFlag<Flags::N>(true);
+            cpu->SetFlag<Flags::C>(a < *tmp);
+            cpu->SetFlag<Flags::H>(IsHCSub(a, *tmp));
+
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+
     // RET C
     case 0xD8:
         scratch = new std::uint16_t;
@@ -3091,6 +3237,32 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
         });
         PushMicrocode([](CPU* cpu) {
             cpu->SubRegister<Registers::SP>(1);
+        });
+        break;
+
+    // AND A, u8
+    case 0xE6:
+        scratch = new std::uint8_t;
+
+        // 8 Cycles
+        PushMicrocode([scratch](CPU* cpu) {
+            auto a = static_cast<std::uint8_t>(cpu->GetRegister<Registers::A>());
+
+            auto tmp = static_cast<std::uint8_t*>(scratch);
+            std::uint8_t value = a & *tmp;
+
+            cpu->SetRegister<Registers::A>(value);
+            cpu->SetFlag<Flags::Z>(value == 0);
+            cpu->SetFlag<Flags::N>(false);
+            cpu->SetFlag<Flags::C>(false);
+            cpu->SetFlag<Flags::H>(true);
+
+            delete tmp;
+        });
+        PushMicrocode([scratch](CPU* cpu) {
+            auto bus = cpu->bus_;
+            *static_cast<std::uint8_t*>(scratch) = bus->Read<std::uint8_t>(cpu->GetRegister<Registers::PC>());
+            cpu->AddRegister<Registers::PC>(1);
         });
         break;
 

@@ -406,6 +406,172 @@ DecodeIncDec8Cycle(DEC_SP, 0x3B, CPU::Registers::SP, -1);
 
 #pragma endregion DecodeIncDec16Cycle
 
+#pragma region DecodeIncDecHL
+
+TEST_F(GameBoyCPUDecode, DecodeINC_HLAddr)
+{
+    std::vector<std::uint8_t> opcodes = {0x34};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x01);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x03); // Something to invalidate if not read already
+    ValidateCPUState(state);
+
+    DoMCycle();
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>()), 0x02);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeINC_HLAddr_ZFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0x34};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0xFF);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x03); // Something to invalidate if not read already
+    ValidateCPUState(state);
+
+    DoMCycle();
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>()), 0x00);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeINC_HLAddr_HFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0x34};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x0F);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x03); // Something to invalidate if not read already
+    ValidateCPUState(state);
+
+    DoMCycle();
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>()), 0x10);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeDEC_HLAddr)
+{
+    std::vector<std::uint8_t> opcodes = {0x35};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x02);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x03); // Something to invalidate if not read already
+    ValidateCPUState(state);
+
+    DoMCycle();
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>()), 0x01);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeDEC_HLAddr_ZFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0x35};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x01);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x03); // Something to invalidate if not read already
+    ValidateCPUState(state);
+
+    DoMCycle();
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>()), 0x00);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeDEC_HLAddr_HFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0x35};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x10);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x03); // Something to invalidate if not read already
+    ValidateCPUState(state);
+
+    DoMCycle();
+    ASSERT_EQ(internalMem_->ReadUInt8(cpu_->GetRegister<CPU::Registers::HL>()), 0xF);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+}
+
+#pragma endregion DecodeIncDecHL
+
 #pragma region DecodeCall
 
 #define DecodeCallConditional(opcode, condition, flag, flagValue)             \
@@ -909,6 +1075,106 @@ DecodeANDNotZero(A, CPU::Registers::A, 0xA7);
 #undef DecodeANDNotZero
 #undef DecodeAND
 
+TEST_F(GameBoyCPUDecode, DecodeANDN)
+{
+    std::vector<std::uint8_t> opcodes = {0xE6, 0x1};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x3);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x1);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeANDN_ZFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0xE6, 0x00};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x0);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeANDHLAddr_Zero)
+{
+    std::vector<std::uint8_t> opcodes = {0xA6};
+    LoadData(opcodes);
+
+    /* 0b10 AND 0b01 = 0b00 */
+    cpu_->SetRegister<CPU::Registers::A>(0b10);
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0b01);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeANDHLAddr_NotZero)
+{
+    std::vector<std::uint8_t> opcodes = {0xA6};
+    LoadData(opcodes);
+
+    /* 0b10 AND 0b10 = 0b10 */
+    cpu_->SetRegister<CPU::Registers::A>(0b10);
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0b10);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0b10);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
 #pragma endregion DecodeAND
 
 #pragma region DecodeXOR
@@ -1336,6 +1602,102 @@ DecodeADD(A, 0x87, CPU::Registers::A);
 
 #undef DecodeADD
 
+TEST_F(GameBoyCPUDecode, DecodeADDN)
+{
+    std::vector<std::uint8_t> opcodes = {0xC6, 0x02};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x3);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(5);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeADDN_ZFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0xC6, 0x01};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0xFF);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(true);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeADDN_HFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0xC6, 0x0F};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x01);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x10);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeADDN_CFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0xC6, 0x05};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0xFF);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x04);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(true);
+    ValidateCPUState(state);
+}
+
 TEST_F(GameBoyCPUDecode, DecodeADDHLAddress)
 {
     std::vector<std::uint8_t> opcodes = {0x86};
@@ -1646,9 +2008,207 @@ DecodeSUB(0x93, E, CPU::Registers::E);
 DecodeSUB(0x94, H, CPU::Registers::H);
 DecodeSUB(0x95, L, CPU::Registers::L);
 
-// TODO: SUB A, (HL)
-
 #undef DecodeSUB
+
+TEST_F(GameBoyCPUDecode, DecodeSUBN)
+{
+    std::vector<std::uint8_t> opcodes = {0xD6, 0x03};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x5);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x2);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeSUBN_ZFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0xD6, 0x02};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x2);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::H>(false);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeSUBN_HFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0xD6, 0x01};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x10);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x0F);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeSUBN_CFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0xD6, 0x01};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x00);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0xFF);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::H>(true);
+    state.SetFlag<CPU::Flags::C>(true);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeSubHLAddr)
+{
+    std::vector<std::uint8_t> opcodes = {0x96};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x03);
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x02);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x05);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x01);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeSubHLAddr_ZFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0x96};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x02);
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x02);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x05);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x00);
+    state.SetFlag<CPU::Flags::Z>(true);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    state.SetFlag<CPU::Flags::H>(false);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeSubHLAddr_CFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0x96};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x00);
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x01);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x05);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0xFF);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::C>(true);
+    state.SetFlag<CPU::Flags::H>(true);
+    ValidateCPUState(state);
+}
+
+TEST_F(GameBoyCPUDecode, DecodeSubHLAddr_HFlag)
+{
+    std::vector<std::uint8_t> opcodes = {0x96};
+    LoadData(opcodes);
+
+    cpu_->SetRegister<CPU::Registers::A>(0x10);
+    cpu_->SetRegister<CPU::Registers::HL>(cpu_->GetRegister<CPU::Registers::PC>() + 10);
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x01);
+
+    CPU state;
+    SaveCPUState(state);
+
+    DoMCycle();
+    internalMem_->WriteUInt8(cpu_->GetRegister<CPU::Registers::HL>(), 0x05);
+    ValidateCPUState(state);
+
+    DoMCycle();
+    state.AddRegister<CPU::Registers::PC>(1);
+    state.SetRegister<CPU::Registers::A>(0x0F);
+    state.SetFlag<CPU::Flags::Z>(false);
+    state.SetFlag<CPU::Flags::N>(true);
+    state.SetFlag<CPU::Flags::C>(false);
+    state.SetFlag<CPU::Flags::H>(true);
+    ValidateCPUState(state);
+}
 
 TEST_F(GameBoyCPUDecode, DecodeSubA)
 {
