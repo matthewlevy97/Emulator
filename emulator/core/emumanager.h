@@ -10,15 +10,17 @@
 #include <windows.h>
 #endif
 
-namespace emulator::core {
+namespace emulator::core
+{
 
-class EmulatorManager {
+class EmulatorManager
+{
 private:
-    #if defined(_WIN32) || defined(_WIN64)
-        using SO_HANDLE = HMODULE;
-    #else
-        using SO_HANDLE = void*;
-    #endif
+#if defined(_WIN32) || defined(_WIN64)
+    using SO_HANDLE = HMODULE;
+#else
+    using SO_HANDLE = void*;
+#endif
 
     std::unordered_map<std::string, SO_HANDLE> loadedEmulators_;
 

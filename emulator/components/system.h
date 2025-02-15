@@ -142,13 +142,15 @@ public:
             if (--tickCounter == 0) {
                 tickCounter = kTickRecalculateInterval;
                 auto elapsedAverage = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    std::chrono::high_resolution_clock::now() - start).count() / kTickRecalculateInterval;
+                                          std::chrono::high_resolution_clock::now() - start)
+                                          .count() /
+                                      kTickRecalculateInterval;
                 if (elapsedAverage <= interval) {
                     // We are running too fast, slow down
                     sleepTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(interval - elapsedAverage));
                 } else {
                     // We are running too slow, speed up
-                    sleepTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(elapsedAverage - interval));
+                    sleepTime = std::chrono::microseconds(0);
                 }
             }
 

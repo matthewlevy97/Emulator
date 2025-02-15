@@ -15,10 +15,12 @@
 #include <mach-o/dyld.h>
 #endif
 
-namespace emulator::core {
+namespace emulator::core
+{
 
 EmulatorManager::EmulatorManager() noexcept
-{}
+{
+}
 
 EmulatorManager::~EmulatorManager() noexcept
 {
@@ -47,13 +49,13 @@ bool EmulatorManager::LoadEmulator(std::string name) noexcept
 
     std::string sharedObjectPath;
 #if defined(_WIN32) || defined(_WIN64)
-    char buffer[MAX_PATH+1];
+    char buffer[MAX_PATH + 1];
 #else
-    char buffer[PATH_MAX+1];
+    char buffer[PATH_MAX + 1];
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-    if(!GetModuleFileName(NULL, buffer, sizeof(buffer))) {
+    if (!GetModuleFileName(NULL, buffer, sizeof(buffer))) {
         spdlog::debug("{}: GetModuleFileName failed", __FUNCTION__, name);
         return false;
     }
@@ -79,24 +81,24 @@ bool EmulatorManager::LoadEmulator(std::string name) noexcept
     std::string exeDir = exePath.substr(0, exePath.find_last_of(pathSeparator));
     sharedObjectPath = exeDir + pathSeparator + sharedObjectPath;
 #endif
-    
+
 #if defined(_WIN32) || defined(_WIN64)
     sharedObjectPath = std::format("{}{}{}{}{}",
-        sharedObjectPath,
-        "systems",
-        pathSeparator,
-        name,
-        ".dll");
+                                   sharedObjectPath,
+                                   "systems",
+                                   pathSeparator,
+                                   name,
+                                   ".dll");
 #elif __APPLE__
     sharedObjectPath = sharedObjectPath +
-        "systems" +
-        pathSeparator +
-        "lib" + name + ".dylib";
+                       "systems" +
+                       pathSeparator +
+                       "lib" + name + ".dylib";
 #else
     sharedObjectPath = sharedObjectPath +
-        "systems" +
-        pathSeparator +
-        "lib" + name + ".so";
+                       "systems" +
+                       pathSeparator +
+                       "lib" + name + ".so";
 #endif
 
     SO_HANDLE handle;

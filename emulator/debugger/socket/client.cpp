@@ -3,7 +3,8 @@
 #include <spdlog/spdlog.h>
 #include <vector>
 
-namespace emulator::debugger::socket {
+namespace emulator::debugger::socket
+{
 
 DebuggerSocketClient::DebuggerSocketClient(SOCKET client) : client_(client)
 {
@@ -73,7 +74,7 @@ int DebuggerSocketClient::ReadAll(std::uint8_t** data) noexcept
 
     int bufLen = 0;
     int bufCap = 4096;
-    std::uint8_t *buf = new std::uint8_t[bufCap+1];
+    std::uint8_t* buf = new std::uint8_t[bufCap + 1];
 
     while (IsReadable()) {
         auto n = recv(client_, reinterpret_cast<char*>(buf), bufCap, 0);
@@ -91,13 +92,13 @@ int DebuggerSocketClient::ReadAll(std::uint8_t** data) noexcept
 
         // Resize for more data
         bufCap += 4096;
-        auto bufNew = new std::uint8_t[bufCap+1];
+        auto bufNew = new std::uint8_t[bufCap + 1];
         std::memcpy(bufNew, buf, bufLen);
         buf = bufNew;
     };
 
     if (bufLen > 0) {
-        buf[bufLen+1] = 0x00;
+        buf[bufLen + 1] = 0x00;
         *data = buf;
     } else {
         delete[] buf;
@@ -137,7 +138,7 @@ int DebuggerSocketClient::Write(const std::uint8_t* data, std::size_t len) noexc
         }
 
         offset += n;
-    } while(offset < len);
+    } while (offset < len);
 
     return offset;
 }

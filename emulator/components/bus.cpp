@@ -2,11 +2,13 @@
 
 #include <spdlog/spdlog.h>
 
-namespace emulator::component {
+namespace emulator::component
+{
 
 Bus::Bus() {}
 
-Bus::~Bus() {
+Bus::~Bus()
+{
     for (auto component : components_) {
         delete component;
     }
@@ -29,15 +31,13 @@ void Bus::RemoveComponent(IComponent* component)
         if (addressable.component == component) {
             addressRanges_.erase(
                 std::remove(addressRanges_.begin(), addressRanges_.end(), addressable),
-                addressRanges_.end()
-            );
+                addressRanges_.end());
         }
     }
 
     components_.erase(
         std::remove(components_.begin(), components_.end(), component),
-        components_.end()
-    );
+        components_.end());
 }
 
 bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::size_t, std::size_t> range) noexcept
@@ -53,11 +53,9 @@ bool Bus::RegisterComponentAddressRange(IComponent* component, std::pair<std::si
     }
 
     spdlog::trace("[bus] Registering address range 0x{:X}-0x{:X}", range.first, range.second);
-    addressRanges_.push_back({
-        range.first,
-        range.second,
-        component
-    });
+    addressRanges_.push_back({range.first,
+                              range.second,
+                              component});
 
     return true;
 }
@@ -83,14 +81,14 @@ bool Bus::UpdateComponentAddressRange(IComponent* component, std::pair<std::size
     for (auto& addressable : addressRanges_) {
         if (addressable.component == component) {
             spdlog::trace("[bus] Updating address range 0x{:X}-0x{:X} -> 0x{:X}-0x{:X}",
-                addressable.start, addressable.end,
-                range.first, range.second);
+                          addressable.start, addressable.end,
+                          range.first, range.second);
 
             addressable.start = range.first;
             addressable.end = range.second;
         }
     }
-    
+
     return true;
 }
 

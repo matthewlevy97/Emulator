@@ -2,13 +2,15 @@
 
 #include <vector>
 
-#include "memory.h"
 #include "exceptions/AddressInUse.h"
+#include "memory.h"
 
-namespace emulator::component {
+namespace emulator::component
+{
 
 template <MemoryType mtype>
-class MultiMappedMemory : public Memory<mtype> {
+class MultiMappedMemory : public Memory<mtype>
+{
 private:
     std::vector<std::pair<std::size_t, std::size_t>> addressRanges_;
 
@@ -36,12 +38,13 @@ public:
     MultiMappedMemory(std::size_t size) : MultiMappedMemory({{0, size}}, size) {}
     MultiMappedMemory(std::vector<std::pair<std::size_t, std::size_t>> addressRanges, size_t size)
         : Memory<mtype>(size), addressRanges_(addressRanges)
-    {}
+    {
+    }
 
     void AttachToBus(Bus* bus) override
     {
         for (const auto& [base, bound] : addressRanges_) {
-            if (!bus->RegisterComponentAddressRange(this, { base, bound })) {
+            if (!bus->RegisterComponentAddressRange(this, {base, bound})) {
                 throw AddressInUse(base, bound - base);
             }
         }
@@ -89,7 +92,7 @@ public:
         Memory<mtype>::WriteInt32(NormalizeToBaseAddress(address), value);
     }
 
-        void WriteUInt32(std::size_t address, std::uint32_t value) override
+    void WriteUInt32(std::size_t address, std::uint32_t value) override
     {
         if (!InMemoryRange(address, sizeof(value))) {
             throw InvalidAddress(address, InvalidAddress::AccessType::WRITE, "Not in range of multi-mapped memory.");
@@ -136,7 +139,7 @@ public:
         }
         return Memory<mtype>::ReadUInt32(NormalizeToBaseAddress(address));
     }
-    
+
     std::int32_t ReadInt32(std::size_t address) override
     {
         // Validate in one of our address ranges

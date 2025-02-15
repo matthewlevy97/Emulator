@@ -5,7 +5,8 @@
 #include <math.h>
 #include <string>
 
-namespace emulator::debugger::socket {
+namespace emulator::debugger::socket
+{
 
 DebuggerSocketServer::DebuggerSocketServer(std::uint16_t port, bool onlyLocalhost)
 {
@@ -58,7 +59,7 @@ DebuggerSocketClient* DebuggerSocketServer::Accept()
     if (activity < 0) {
         throw std::runtime_error("Select failed");
     }
-    
+
     if (FD_ISSET(server_, &readable)) {
         struct sockaddr_in sa;
         std::memset(&sa, 0, sizeof(sa));

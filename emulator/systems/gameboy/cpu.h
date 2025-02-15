@@ -11,9 +11,11 @@
 
 #include "names.h"
 
-namespace emulator::gameboy {
+namespace emulator::gameboy
+{
 
-class CPU : public emulator::component::CPU {
+class CPU : public emulator::component::CPU
+{
 public:
     static constexpr std::size_t TCycleToMCycle = 4;
 
@@ -59,7 +61,7 @@ public:
         C
     };
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline std::uint16_t GetRegister()
     {
         if constexpr (Reg == Registers::AF) {
@@ -95,7 +97,7 @@ public:
         }
     }
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline void SetRegister(std::uint16_t value)
     {
         if constexpr (Reg == Registers::AF) {
@@ -131,7 +133,7 @@ public:
         }
     }
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline void AddRegister(std::uint16_t value)
     {
         if constexpr (Reg == Registers::AF) {
@@ -165,7 +167,7 @@ public:
         }
     }
 
-    template<Registers Reg>
+    template <Registers Reg>
     inline void SubRegister(std::uint16_t value)
     {
         if constexpr (Reg == Registers::AF) {
@@ -199,7 +201,7 @@ public:
         }
     }
 
-    template<Flags Flag>
+    template <Flags Flag>
     inline bool GetFlag()
     {
         if constexpr (Flag == Flags::Z) {
@@ -215,7 +217,7 @@ public:
         }
     }
 
-    template<Flags Flag>
+    template <Flags Flag>
     inline void SetFlag(bool value)
     {
         std::uint16_t mask;
@@ -239,6 +241,25 @@ public:
     }
 
 private:
+    bool enableIMENextCycle_{false};
+    bool IME_{false};
+    std::uint8_t IEFlags_{0};
+    std::uint8_t IFFlags_{0};
+
+    enum class InterruptFlag {
+        VBlank = 0,
+        LCDStat = 1,
+        Timer = 2,
+        Serial = 3,
+        Joypad = 4
+    };
+
+    template <InterruptFlag T>
+    constexpr bool GetInterruptFlag() const noexcept
+    {
+        return (IEFlags_ >> static_cast<std::uint8_t>(T)) & 0x1;
+    }
+
     using MicroCode = std::function<void(CPU*)>;
     std::array<MicroCode, 32> microcode_;
     size_t microcodeStackLength_;
@@ -263,7 +284,7 @@ private:
                 int carry = (val >> 7) & 0x1;
 
                 val = (val << 1) | carry;
-                
+
                 cpu->SetRegister<reg>(val);
                 cpu->SetFlag<Flags::Z>(val == 0);
                 cpu->SetFlag<Flags::H>(false);
@@ -364,6 +385,11 @@ public:
 
     void WriteInt8(std::size_t address, std::int8_t value) override
     {
+        if (address == 0xFFFF) {
+            IEFlags_ = value & 0b00011111;
+        } else if (address == 0xFF0F) {
+            IFFlags_ = value & 0b00011111;
+        }
         return;
     }
 
@@ -389,6 +415,11 @@ public:
 
     std::uint8_t ReadUInt8(std::size_t address) override
     {
+        if (address == 0xFFFF) {
+            return IEFlags_;
+        } else if (address == 0xFF0F) {
+            return IFFlags_;
+        }
         return 0;
     }
 

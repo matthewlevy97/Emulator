@@ -6,11 +6,13 @@
 
 #include <chrono>
 
-namespace emulator::debugger {
+namespace emulator::debugger
+{
 
 Debugger::Debugger()
     : runServerThread_(false), currentDebugger_(nullptr)
-{}
+{
+}
 
 Debugger::~Debugger()
 {

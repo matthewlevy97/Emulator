@@ -61,6 +61,7 @@ private:
     private:
         std::array<std::uint8_t, 10> buffer_;
         std::size_t index_{0};
+
     public:
         PixelFIFO() = default;
 
@@ -78,13 +79,13 @@ private:
         std::uint8_t Pop() noexcept
         {
             auto sprite = buffer_[0];
-            
+
             // Shift all elements to the left
             for (std::size_t i = 0; i < index_ - 1; ++i) {
                 buffer_[i] = buffer_[i + 1];
             }
             --index_;
-            
+
             return sprite;
         }
 
@@ -219,21 +220,21 @@ public:
             for (std::size_t i = 0; i < 4; ++i) {
                 auto id = (value >> (i * 2)) & 0b11;
                 switch (id) {
-                    case 0:
-                        colorPalette_[i] = kColorPaletteWhite_;
-                        break;
-                    case 1:
-                        colorPalette_[i] = kColorPaletteLightGray_;
-                        break;
-                    case 2:
-                        colorPalette_[i] = kColorPaletteDarkGray_;
-                        break;
-                    case 3:
-                        colorPalette_[i] = kColorPaletteBlack_;
-                        break;
+                case 0:
+                    colorPalette_[i] = kColorPaletteWhite_;
+                    break;
+                case 1:
+                    colorPalette_[i] = kColorPaletteLightGray_;
+                    break;
+                case 2:
+                    colorPalette_[i] = kColorPaletteDarkGray_;
+                    break;
+                case 3:
+                    colorPalette_[i] = kColorPaletteBlack_;
+                    break;
                 }
             }
-            
+
         } else if (address == 0xFF4A) {
             WY_ = value;
         } else if (address == 0xFF4B) {

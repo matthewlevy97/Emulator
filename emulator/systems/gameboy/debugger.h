@@ -2,14 +2,16 @@
 
 #include "cpu.h"
 
-#include <debugger/sysdebugger.h>
 #include <components/system.h>
+#include <debugger/sysdebugger.h>
 
 #include <array>
 
-namespace emulator::gameboy {
+namespace emulator::gameboy
+{
 
-class Debugger : public emulator::debugger::ISystemDebugger {
+class Debugger : public emulator::debugger::ISystemDebugger
+{
 private:
     std::array<emulator::debugger::RegisterInfo, 1> kDebugRegisters;
 

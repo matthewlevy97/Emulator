@@ -1,9 +1,9 @@
 #include <fstream>
 
 #include <components/display.h>
+#include <components/input.h>
 #include <components/memory.h>
 #include <components/timer.h>
-#include <components/input.h>
 
 #include <emulator.h>
 
@@ -46,10 +46,22 @@ emulator::component::System* CreateSystem()
     A 0 B F          Z X C V
      */
     constexpr static std::uint8_t kKeycodes[] = {
-        0x31, 0x32, 0x33, 0x34,
-        0x71, 0x77, 0x65, 0x72,
-        0x61, 0x73, 0x64, 0x66,
-        0x7A, 0x78, 0x63, 0x76,
+        0x31,
+        0x32,
+        0x33,
+        0x34,
+        0x71,
+        0x77,
+        0x65,
+        0x72,
+        0x61,
+        0x73,
+        0x64,
+        0x66,
+        0x7A,
+        0x78,
+        0x63,
+        0x76,
     };
     for (int i = 0; i < sizeof(kKeycodes); i++) {
         input->RegisterKey(kKeycodes[i]);
@@ -89,6 +101,6 @@ emulator::component::System* CreateSystem()
         });
         frontend.Log("Loaded ROM");
     });
-    
+
     return system;
 }

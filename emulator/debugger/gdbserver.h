@@ -5,9 +5,11 @@
 
 #include <string>
 
-namespace emulator::debugger {
+namespace emulator::debugger
+{
 
-class GDBServerConnection {
+class GDBServerConnection
+{
 private:
     struct GDBPacket {
         bool valid;

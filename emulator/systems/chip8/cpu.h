@@ -49,10 +49,11 @@ public:
     void ReceiveTick() override;
 
     void PowerOn() noexcept override {};
-    void PowerOff() noexcept override {
+    void PowerOff() noexcept override
+    {
         registers_.fill(0);
         I_ = 0;
-        pc_ = 0;
+        pc_ = 0x200;
         sp_ = 0;
         stack_.fill(0);
         waitingForKeyChange_ = false;

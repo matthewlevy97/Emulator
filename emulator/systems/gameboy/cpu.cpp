@@ -32,6 +32,11 @@ void CPU::ReceiveTick()
         TCycles = TCycleToMCycle;
     }
 
+    if (enableIMENextCycle_) {
+        IME_ = true;
+        enableIMENextCycle_ = false;
+    }
+
     // Pipeline executes fetch on same cycle as end of execute
     // Decode and execute are same cycle(s) on real system
     // Fetch and decode are same cycle(s) when emulating
@@ -123,7 +128,7 @@ void CPU::LoadStartup() noexcept
     auto cartridge0 = reinterpret_cast<emulator::component::Memory<emulator::component::MemoryType::ReadOnly>*>(
         GetSystem()->GetComponent(emulator::gameboy::kCartridge0Name));
 
-        cartridge0->LoadData((const char*)bootData_, bootSize_);
+    cartridge0->LoadData((const char*)bootData_, bootSize_);
     cartridge0->OverwriteContext(0, bootSize_); // Make Context 0 the boot ROM
 }
 

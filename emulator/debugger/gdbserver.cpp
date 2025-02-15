@@ -5,14 +5,16 @@
 
 #include <spdlog/spdlog.h>
 
-namespace emulator::debugger {
+namespace emulator::debugger
+{
 
-GDBServerConnection::GDBServerConnection(Debugger* debugger, socket::DebuggerSocketClient* client) :
-    debugger_(debugger), client_(client), state_(ConnectionState::PRECONNECT)
-{}
+GDBServerConnection::GDBServerConnection(Debugger* debugger, socket::DebuggerSocketClient* client) : debugger_(debugger), client_(client), state_(ConnectionState::PRECONNECT)
+{
+}
 
 GDBServerConnection::~GDBServerConnection()
-{}
+{
+}
 
 void GDBServerConnection::ServeWhile(volatile bool& check) noexcept
 {
@@ -20,9 +22,8 @@ void GDBServerConnection::ServeWhile(volatile bool& check) noexcept
         return;
     }
 
-    while(check) {
-        switch(state_)
-        {
+    while (check) {
+        switch (state_) {
         case ConnectionState::PRECONNECT:
             if (client_->IsReadable()) {
                 state_ = ConnectionState::HANDSHAKE;
@@ -76,7 +77,7 @@ bool GDBServerConnection::SendOKResponse() noexcept
 bool GDBServerConnection::SendSignal(std::uint8_t signal, StopReason reason) noexcept
 {
     std::string msg;
-    
+
     switch (reason) {
     case StopReason::NONE:
         msg = std::format("S{:02X}", signal);
@@ -124,7 +125,7 @@ std::size_t GDBServerConnection::ExtractPacket(GDBPacket& pkt, std::uint8_t* buf
     // Scan for end of packet
     std::size_t eop = 0;
     std::uint8_t chksum = 0;
-    while(eop < len && buf[eop] != '#') {
+    while (eop < len && buf[eop] != '#') {
         chksum += buf[eop];
         eop++;
     }
@@ -136,10 +137,9 @@ std::size_t GDBServerConnection::ExtractPacket(GDBPacket& pkt, std::uint8_t* buf
 
     // Validate Checksum
     char chksumStr[3] = {
-        char(buf[eop+1]),
-        char(buf[eop+2]),
-        '\0'
-    };
+        char(buf[eop + 1]),
+        char(buf[eop + 2]),
+        '\0'};
     pkt.chksum = static_cast<std::uint8_t>(std::strtoul(chksumStr, nullptr, 16) & 0xFF);
     if (chksum != pkt.chksum) {
         pkt.valid = false;
@@ -181,7 +181,7 @@ void GDBServerConnection::ProcessHandshakeMessage() noexcept
         }
 
         GDBPacket packet;
-        if (cursor+1 < n && buf[cursor] == '$') [[likely]] {
+        if (cursor + 1 < n && buf[cursor] == '$') [[likely]] {
             // Start of Packet
             cursor++;
             cursor += ExtractPacket(packet, buf + cursor, n - cursor);
@@ -205,15 +205,13 @@ void GDBServerConnection::ProcessHandshakeMessage() noexcept
             QStartNoAckMode_ = true;
         } else if (packet.data == "qHostInfo") {
             auto msg = std::format("hostname:emulator;vendor:{}",
-                debugger_->GetCurrentDebugger()->GetName()
-            );
+                                   debugger_->GetCurrentDebugger()->GetName());
             SendResponse(msg);
         } else if (packet.data == "qProcessInfo") {
             auto debugger = debugger_->GetCurrentDebugger();
             auto msg = std::format("pid:{};vendor:{}",
-                debugger->GetCurrentPID(),
-                debugger->GetName()
-            );
+                                   debugger->GetCurrentPID(),
+                                   debugger->GetName());
 
             SendResponse(msg);
         } else if (packet.data.starts_with("qGetWorkingDir")) {
@@ -273,11 +271,11 @@ void GDBServerConnection::ProcessRunningMessage() noexcept
             }
         }
 
-        if (cursor+1 < n && buf[cursor] == '$') [[likely]] {
+        if (cursor + 1 < n && buf[cursor] == '$') [[likely]] {
             // Start of Packet
             cursor++;
             ProcessRunningPacket(buf, n, cursor);
-        } else if (cursor+1 < n && buf[cursor] == '%') {
+        } else if (cursor + 1 < n && buf[cursor] == '%') {
             cursor++;
             ProcessRunningNotification(buf, n, cursor);
         } else {
@@ -306,9 +304,8 @@ void GDBServerConnection::ProcessRunningPacket(std::uint8_t* buf, std::size_t n,
     if (packet.data == "qProcessInfo") {
         auto debugger = debugger_->GetCurrentDebugger();
         auto msg = std::format("pid:{};vendor:{}",
-            debugger->GetCurrentPID(),
-            debugger->GetName()
-        );
+                               debugger->GetCurrentPID(),
+                               debugger->GetName());
         SendResponse(msg);
     } else if (packet.data == "qfThreadInfo") {
         if (debugger_->GetCurrentDebugger()->IsStopped()) {
@@ -388,7 +385,8 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt) noexcept
     memcpy(dup, pkt.data.c_str(), pkt.data.size());
     dup[pkt.data.size()] = '\0';
 
-    while (*tmp != '\0' && *tmp != ':') tmp++;
+    while (*tmp != '\0' && *tmp != ':')
+        tmp++;
     if (*tmp == '\0') {
         // No Options
         spdlog::debug("qSupported Packet contains no options");
@@ -428,8 +426,7 @@ void GDBServerConnection::HandleQSupportedPacket(GDBPacket& pkt) noexcept
 
         {"fork", false},
         {"vfork", false},
-        {"multiprocess", false}
-    };
+        {"multiprocess", false}};
 
     std::string response = "";
     for (const auto& opt : kv) {
@@ -467,11 +464,11 @@ void GDBServerConnection::HandleVCont(GDBPacket& pkt) noexcept
     std::stringstream actionStr(pkt.data.substr(cmd));
     std::string action;
     std::vector<std::string> actions;
-    while(std::getline(actionStr, action, ';')) {
+    while (std::getline(actionStr, action, ';')) {
         if (action.empty()) {
             continue;
         }
-        
+
         spdlog::trace("{}:{} Received Control Action: {}", __FUNCTION__, __LINE__, action);
         actions.push_back(action);
     }
@@ -500,13 +497,15 @@ void GDBServerConnection::HandleMemoryInspect(GDBPacket& pkt) noexcept
 {
     char* endptr = nullptr;
     auto addr = std::strtoll(pkt.data.c_str() + 1, &endptr, 16);
-    std::size_t length = std::strtoll(endptr+1, nullptr, 16);
+    std::size_t length = std::strtoll(endptr + 1, nullptr, 16);
 
     // Read memory from system
     auto memory = debugger_->GetCurrentDebugger()->ReadMemory(addr, length);
     if (memory == nullptr) {
-        if (pkt.data[0] == 'x') SendError(1);
-        else SendEmptyResponse();
+        if (pkt.data[0] == 'x')
+            SendError(1);
+        else
+            SendEmptyResponse();
     }
 
     std::string hexStr = pkt.data[0] == 'm' ? "" : "b ";

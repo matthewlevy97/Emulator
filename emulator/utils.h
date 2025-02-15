@@ -1,8 +1,9 @@
 #pragma once
 
-namespace emulator {
+namespace emulator
+{
 
-char *Strsep(char** str, char sep) noexcept
+char* Strsep(char** str, char sep) noexcept
 {
     if (!*str) {
         return nullptr;

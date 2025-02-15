@@ -9,16 +9,17 @@
 
 #include "exceptions/AddressInUse.h"
 
-namespace emulator::component {
-
-enum class MemoryType
+namespace emulator::component
 {
+
+enum class MemoryType {
     ReadWrite,
     ReadOnly
 };
 
 template <MemoryType mtype>
-class Memory : public IComponent {
+class Memory : public IComponent
+{
 public:
     using ContextID = std::size_t;
 
@@ -46,7 +47,7 @@ public:
 
         baseAddress_ = baseAddress;
         boundAddress_ = baseAddress + size;
-        
+
         memory_.resize(size);
         memory_.shrink_to_fit();
     };
@@ -85,7 +86,7 @@ public:
         }
 
         // Update bus about change
-        if (!bus_->UpdateComponentAddressRange(this, { baseAddress_, baseAddress_ + memory_.size() - 1 })) {
+        if (!bus_->UpdateComponentAddressRange(this, {baseAddress_, baseAddress_ + memory_.size() - 1})) {
             throw AddressInUse(baseAddress_, memory_.size());
         }
     }
@@ -140,7 +141,7 @@ public:
 
     void AttachToBus(Bus* bus) override
     {
-        if (!bus->RegisterComponentAddressRange(this, { baseAddress_, baseAddress_ + memory_.size() - 1 })) {
+        if (!bus->RegisterComponentAddressRange(this, {baseAddress_, baseAddress_ + memory_.size() - 1})) {
             throw AddressInUse(baseAddress_, memory_.size());
         }
         bus_ = bus;
@@ -149,7 +150,8 @@ public:
     void ReceiveTick() override {};
 
     void PowerOn() noexcept override {};
-    void PowerOff() noexcept override {
+    void PowerOff() noexcept override
+    {
         std::fill(memory_.begin(), memory_.end(), 0);
         contexts_.clear();
     };
