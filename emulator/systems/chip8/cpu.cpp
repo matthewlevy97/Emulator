@@ -14,10 +14,7 @@ namespace emulator::chip8
 
 CPU::CPU()
 {
-    registers_.fill(0);
-    pc_ = 0x200;
-    sp_ = 0;
-    stack_.fill(0);
+    PowerOff();
 
     pixelOn_ = emulator::component::Display::Pixel(128, 255, 128, 255);
 }
