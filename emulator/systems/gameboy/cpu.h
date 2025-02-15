@@ -241,6 +241,25 @@ public:
     }
 
 private:
+    bool enableIMENextCycle_{false};
+    bool IME_{false};
+    std::uint8_t IEFlags_{0};
+    std::uint8_t IFFlags_{0};
+
+    enum class InterruptFlag {
+        VBlank = 0,
+        LCDStat = 1,
+        Timer = 2,
+        Serial = 3,
+        Joypad = 4
+    };
+
+    template <InterruptFlag T>
+    constexpr bool GetInterruptFlag() const noexcept
+    {
+        return (IEFlags_ >> static_cast<std::uint8_t>(T)) & 0x1;
+    }
+
     using MicroCode = std::function<void(CPU*)>;
     std::array<MicroCode, 32> microcode_;
     size_t microcodeStackLength_;
@@ -366,6 +385,11 @@ public:
 
     void WriteInt8(std::size_t address, std::int8_t value) override
     {
+        if (address == 0xFFFF) {
+            IEFlags_ = value & 0b00011111;
+        } else if (address == 0xFF0F) {
+            IFFlags_ = value & 0b00011111;
+        }
         return;
     }
 
@@ -391,6 +415,11 @@ public:
 
     std::uint8_t ReadUInt8(std::size_t address) override
     {
+        if (address == 0xFFFF) {
+            return IEFlags_;
+        } else if (address == 0xFF0F) {
+            return IFFlags_;
+        }
         return 0;
     }
 

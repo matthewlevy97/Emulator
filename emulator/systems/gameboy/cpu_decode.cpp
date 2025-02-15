@@ -3381,6 +3381,14 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             cpu->AddRegister<Registers::SP>(1);
         });
         break;
+    
+    // DI
+    case 0xF3:
+        // 4 Cycle
+        PushMicrocode([](CPU* cpu) {
+            cpu->IME_ = false;
+        });
+        break;
 
     // PUSH AF
     case 0xF5:
@@ -3454,6 +3462,14 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             auto val = bus->Read<std::uint16_t>(cpu->GetRegister<Registers::PC>());
             *static_cast<std::uint16_t*>(scratch) = val;
             cpu->AddRegister<Registers::PC>(1);
+        });
+        break;
+
+    // EI
+    case 0xFB:
+        // 4 Cycle
+        PushMicrocode([](CPU* cpu) {
+            cpu->enableIMENextCycle_ = true;
         });
         break;
 

@@ -32,6 +32,11 @@ void CPU::ReceiveTick()
         TCycles = TCycleToMCycle;
     }
 
+    if (enableIMENextCycle_) {
+        IME_ = true;
+        enableIMENextCycle_ = false;
+    }
+
     // Pipeline executes fetch on same cycle as end of execute
     // Decode and execute are same cycle(s) on real system
     // Fetch and decode are same cycle(s) when emulating
