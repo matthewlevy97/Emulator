@@ -150,7 +150,7 @@ public:
                     sleepTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(interval - elapsedAverage));
                 } else {
                     // We are running too slow, speed up
-                    sleepTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(elapsedAverage - interval));
+                    sleepTime = std::chrono::microseconds(0);
                 }
             }
 

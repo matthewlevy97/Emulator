@@ -8,7 +8,11 @@ cmake_policy(SET CMP0079 NEW)
 
 option(CMAKE_POSITION_INDEPENDENT_CODE "Default value for POSITION_INDEPENDENT_CODE of targets" TRUE)
 
-project(Emulator)
+project(Emulator LANGUAGES C CXX)
+if (APPLE)
+  enable_language(OBJC)
+  enable_language(OBJCXX)
+endif()
 
 option(BUILD_TESTS "Build all tests" OFF)
 
