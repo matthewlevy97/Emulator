@@ -380,17 +380,16 @@ public:
             // Disable boot ROM if value != 0
             auto system = bus_->GetBoundSystem();
             bus_->RemoveComponent(system->GetComponent(kBootROMName));
+        } else if (address == 0xFFFF) {
+            IEFlags_ = value & 0b00011111;
+        } else if (address == 0xFF0F) {
+            IFFlags_ = value & 0b00011111;
         }
     }
 
     void WriteInt8(std::size_t address, std::int8_t value) override
     {
-        if (address == 0xFFFF) {
-            IEFlags_ = value & 0b00011111;
-        } else if (address == 0xFF0F) {
-            IFFlags_ = value & 0b00011111;
-        }
-        return;
+        WriteUInt8(address, static_cast<std::uint8_t>(value));
     }
 
     void WriteUInt16(std::size_t address, std::uint16_t value) override
@@ -425,7 +424,7 @@ public:
 
     std::int8_t ReadInt8(std::size_t address) override
     {
-        return 0;
+        return static_cast<std::int8_t>(ReadUInt8(address));
     }
 
     std::uint16_t ReadUInt16(std::size_t address) override

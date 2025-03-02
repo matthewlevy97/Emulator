@@ -936,7 +936,6 @@ void CPU::DecodeOpcode(std::uint8_t opcode)
             auto bus = cpu->bus_;
             auto tmp = static_cast<std::uint8_t*>(scratch);
             bus->Write<std::uint8_t>(cpu->GetRegister<Registers::HL>(), *tmp);
-            spdlog::info("Writing");
             delete tmp;
         });
         PushMicrocode([scratch](CPU* cpu) {

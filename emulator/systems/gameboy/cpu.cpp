@@ -101,6 +101,10 @@ void CPU::AttachToBus(component::Bus* bus)
     if (!bus->RegisterComponentAddressRange(this, {0xFF50, 0xFF70})) {
         throw component::AddressInUse(0xFF50, 0x20);
     }
+
+    if (!bus->RegisterComponentAddressRange(this, {0xFFFF, 0xFFFF + 1})) {
+        throw component::AddressInUse(0xFFFF, 0x1);
+    }
     bus_ = bus;
 }
 

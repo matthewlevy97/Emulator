@@ -11,5 +11,6 @@ static constexpr const char* kUpperInternalRAMName = "UpperInternalRAM";
 static constexpr const char* kCartridgeSwitchableName = "CartridgeSwitchable";
 static constexpr const char* kCartridge0Name = "Cartidge0";
 static constexpr const char* kBootROMName = "BootROM";
+static constexpr const char* kUnusedRange = "UnusedRange";
 
 }; // namespace emulator::gameboy

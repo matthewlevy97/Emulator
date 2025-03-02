@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "exceptions/InvalidAddress.h"
+#include "exceptions/MemoryNoImplementation.h"
 
 namespace emulator::component
 {
@@ -81,12 +82,12 @@ public:
 #define READ_FUNC_DECL(TypeName, type)                                                  \
     virtual type Read##TypeName(std::size_t address)                                    \
     {                                                                                   \
-        throw std::runtime_error("Read" RW_STR_TYPE_NAME(TypeName) " not implemented"); \
+        throw MemoryNoImplementation(true, address, sizeof(type));                      \
     }
 #define WRITE_FUNC_DECL(TypeName, type)                                                  \
     virtual void Write##TypeName(std::size_t address, type value)                        \
     {                                                                                    \
-        throw std::runtime_error("Write" RW_STR_TYPE_NAME(TypeName) " not implemented"); \
+        throw MemoryNoImplementation(false, address, sizeof(type));                      \
     }
 #define READ_WRITE_FUNC_DECL(TypeName, type) \
     READ_FUNC_DECL(TypeName, type)           \

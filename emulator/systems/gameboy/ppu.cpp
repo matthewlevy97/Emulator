@@ -36,6 +36,11 @@ void PPU::ReceiveTick()
 
 void PPU::AttachToBus(emulator::component::Bus* bus)
 {
+    // OAM - Object Attribute Memory
+    if (!bus->RegisterComponentAddressRange(this, {0xFE00, 0xFEA0})) {
+        throw component::AddressInUse(0xFF40, 0xB);
+    }
+
     if (!bus->RegisterComponentAddressRange(this, {0xFF40, 0xFF4B})) {
         throw component::AddressInUse(0xFF40, 0xB);
     }

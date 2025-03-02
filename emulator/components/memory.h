@@ -8,6 +8,7 @@
 #include "component.h"
 
 #include "exceptions/AddressInUse.h"
+#include "exceptions/MemoryReadOnly.h"
 
 namespace emulator::component
 {
@@ -35,11 +36,13 @@ protected:
 
     std::vector<MemoryContext> contexts_;
 
+    bool silentException_;
     std::vector<std::uint8_t> memory_;
 
 public:
     Memory(std::size_t size) : Memory(0, size) {}
-    Memory(std::size_t baseAddress, size_t size) : IComponent(IComponent::ComponentType::Memory)
+    Memory(std::size_t baseAddress, size_t size, bool silentException = false)
+        : IComponent(IComponent::ComponentType::Memory), silentException_(silentException)
     {
         if (baseAddress_ + size < baseAddress_) {
             throw std::invalid_argument("Invalid address range");
@@ -52,11 +55,16 @@ public:
         memory_.shrink_to_fit();
     };
 
-    void Clear()
+    void Clear() noexcept
     {
         for (std::size_t i = 0; i < memory_.size(); i++) {
             memory_[i] = 0;
         }
+    }
+
+    void Fill(const std::uint8_t value) noexcept
+    {
+        std::fill(memory_.begin(), memory_.end(), value);
     }
 
     bool LoadData(const char* data, std::size_t size, std::size_t offset = 0) noexcept
@@ -159,7 +167,7 @@ public:
     void WriteUInt8(std::size_t address, std::uint8_t value) override
     {
         if constexpr (mtype == MemoryType::ReadOnly) {
-            IComponent::WriteUInt8(address, value);
+            if (!silentException_) throw MemoryReadOnlyViolation(address, sizeof(value));
         } else {
             auto normalizedAddress = ValidateAndNormalizeAddress<std::uint8_t>(address);
             memory_[normalizedAddress] = value;
@@ -169,7 +177,7 @@ public:
     void WriteInt8(std::size_t address, std::int8_t value) override
     {
         if constexpr (mtype == MemoryType::ReadOnly) {
-            IComponent::WriteInt8(address, value);
+            if (!silentException_) throw MemoryReadOnlyViolation(address, sizeof(value));
         } else {
             auto normalizedAddress = ValidateAndNormalizeAddress<std::int8_t>(address);
             memory_[normalizedAddress] = value;
@@ -179,7 +187,7 @@ public:
     void WriteUInt16(std::size_t address, std::uint16_t value) override
     {
         if constexpr (mtype == MemoryType::ReadOnly) {
-            IComponent::WriteUInt16(address, value);
+            if (!silentException_) throw MemoryReadOnlyViolation(address, sizeof(value));
         } else {
             auto normalizedAddress = ValidateAndNormalizeAddress<std::uint16_t>(address);
             memory_[normalizedAddress] = value & 0xFF;
@@ -190,7 +198,7 @@ public:
     void WriteInt16(std::size_t address, std::int16_t value) override
     {
         if constexpr (mtype == MemoryType::ReadOnly) {
-            IComponent::WriteInt16(address, value);
+            if (!silentException_) throw MemoryReadOnlyViolation(address, sizeof(value));
         } else {
             auto normalizedAddress = ValidateAndNormalizeAddress<std::int16_t>(address);
             memory_[normalizedAddress] = value & 0xFF;
@@ -201,7 +209,7 @@ public:
     void WriteUInt32(std::size_t address, std::uint32_t value) override
     {
         if constexpr (mtype == MemoryType::ReadOnly) {
-            IComponent::WriteUInt32(address, value);
+            if (!silentException_) throw MemoryReadOnlyViolation(address, sizeof(value));
         } else {
             auto normalizedAddress = ValidateAndNormalizeAddress<std::uint32_t>(address);
             memory_[normalizedAddress] = value & 0xFF;
@@ -214,7 +222,7 @@ public:
     void WriteInt32(std::size_t address, std::int32_t value) override
     {
         if constexpr (mtype == MemoryType::ReadOnly) {
-            IComponent::WriteInt32(address, value);
+            if (!silentException_) throw MemoryReadOnlyViolation(address, sizeof(value));
         } else {
             auto normalizedAddress = ValidateAndNormalizeAddress<std::int32_t>(address);
             memory_[normalizedAddress] = value & 0xFF;

@@ -15,9 +15,8 @@ emulator::component::System* CreateSystem()
     auto cpu = new emulator::gameboy::CPU();
     auto debugger = new emulator::gameboy::Debugger(cpu);
 
-    // TODO: 1) Load actual ROM here
-    // TODO: 2) Add UI option to file picker load ROM
-    // TODO: 3) Replace BIOS w/ non-copywritten version / allow loading custom BIOS
+    auto notUsedMemory = new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0xFEA0, 0x60, true);
+    notUsedMemory->Fill(0xFF);
 
     auto system = new emulator::component::System(
         "GameBoy",
@@ -36,9 +35,15 @@ emulator::component::System* CreateSystem()
             // Internal RAM
             {emulator::gameboy::kUpperInternalRAMName, new emulator::component::Memory<emulator::component::MemoryType::ReadWrite>(0xFF80, 0x7F)},
 
+            // Not Used Range
+            {emulator::gameboy::kUnusedRange, notUsedMemory},
+
+            // Invalid I/O
+            {"Invalid I/O", new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0xFF71, 0xF, true)},
+
             // Cartridge ROMs
-            {emulator::gameboy::kCartridgeSwitchableName, new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0x4000, 0x4000)},
-            {emulator::gameboy::kCartridge0Name, new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0, 0x4000)},
+            {emulator::gameboy::kCartridgeSwitchableName, new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0x4000, 0x4000, true)},
+            {emulator::gameboy::kCartridge0Name, new emulator::component::Memory<emulator::component::MemoryType::ReadOnly>(0, 0x4000, true)},
         },
         debugger);
 
